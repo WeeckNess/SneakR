@@ -1,9 +1,9 @@
 <script setup>
-  import Home from '../components/Home.vue'
+  import teste from '../components/Profile.vue'
 </script>
 
 <template>
   <main>
-    <Home />
+    <teste />
   </main>
 </template>

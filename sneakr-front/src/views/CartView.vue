@@ -1,9 +1,9 @@
 <script setup>
-  import Home from '../components/Home.vue'
+  import Cart from '../components/Cart.vue'
 </script>
 
 <template>
   <main>
-    <Home />
+    <Cart />
   </main>
 </template>

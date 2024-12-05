@@ -1,85 +1,130 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterLink, RouterView } from 'vue-router';
 </script>
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
     <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+      <nav class="gauche">
+        <RouterLink to="/fiofia" class="nav-link">
+          <img src="../src/assets/Search logo.png" alt="Logo" class="search-logo" />
+        </RouterLink>
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
+      </nav>
+      <!-- Logo au centre avec lien vers la page d'accueil -->
+      <nav class="logo">
+        <RouterLink to="/">
+          <img src="../src/assets/SNK Trade Logo.webp" alt="Logo" class="logo-img" />
+        </RouterLink>
+      </nav>
+      <nav class="droite">
+        <RouterLink to="/profile" class="nav-link">
+          <img src="../src/assets/User Profile Logo.png" alt="Profile" class="profile-icon" />
+        </RouterLink>
+        <RouterLink to="/cart" class="nav-link">
+          <img src="../src/assets/Shopping Cart Icon.png" alt="Cart" class="cart-icon" />
+        </RouterLink>
       </nav>
     </div>
   </header>
-
-  <RouterView />
+  <main>
+    <RouterView />
+  </main>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+.wrapper {
+  background-color: white;
+  padding: 1rem 2rem;
+  font-family: 'Bebas Neue', sans-serif;
+  display: flex;
+  justify-content: space-between; /* Espaces entre la gauche, le centre et la droite */
+  align-items: center;
+  width: 100%; /* Assure que la barre de navigation occupe toute la largeur */
+}
+
+.gauche {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.droite {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
+  flex: 1; /* Permet de répartir l'espace de manière égale et de centrer le logo */
   text-align: center;
-  margin-top: 2rem;
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.logo-img {
+  max-height: 120px; /* Ajuste la hauteur du logo */
+  object-fit: contain; /* Maintient les proportions de l'image */
+  transition: transform 0.3s ease, filter 0.3s ease; /* Ajout de la transition pour le zoom et l'inversion des couleurs */
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
+.logo-img:hover {
+  transform: scale(1.1); /* Zoom au survol */
+  filter: invert(1); /* Inverse les couleurs de l'image au survol */
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
+.nav-link {
+  color: #353535;
+  text-decoration: none;
+  font-size: 18px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
-nav a:first-of-type {
-  border: 0;
+.nav-link:hover {
+  background-color: #353535;
+  color: #fff;
+  transform: scale(1.1);
 }
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
+.nav-link:active {
+  background-color: #ffffff;
+}
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+.droite .nav-link {
+  margin-right: 20px; /* Espacement entre chaque lien */
+}
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+/* Style des icônes */
+.profile-icon,
+.cart-icon{
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 0%;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
 
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
+.cart-icon:hover,
+.profile-icon:hover {
+  transform: scale(1.1);
+  filter: invert(1);
+}
 
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.search-icon:hover,
+.search-icon:hover {
+  transform: scale(0.1);
+  filter: invert(1);
+}
+
+.search-logo {
+  width: 75px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 0%;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+ 
+main {
+  padding: 2rem;
+  background-color: #f9f9f9;
+  min-height: 80vh;
 }
 </style>

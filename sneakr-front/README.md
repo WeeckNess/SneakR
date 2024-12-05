@@ -1,4 +1,4 @@
-# sneakr-front
+# back2fest
 
 This template should help get you started developing with Vue 3 in Vite.
 
@@ -27,3 +27,12 @@ npm run dev
 ```sh
 npm run build
 ```
+
+il faut :
+- login 
+- acheter des places
+- page artiste 
+- page festival ( histoire et tout)
+- Garder la DA du festival 
+- page bracelet (avec la presentation du bracelet)
+

@@ -9,9 +9,7 @@ import { RouterLink, RouterView } from 'vue-router';
         <RouterLink to="/fiofia" class="nav-link">
           <img src="../src/assets/Search logo.png" alt="Logo" class="search-logo" />
         </RouterLink>
-
       </nav>
-      <!-- Logo au centre avec lien vers la page d'accueil -->
       <nav class="logo">
         <RouterLink to="/">
           <img src="../src/assets/SNK Trade Logo.webp" alt="Logo" class="logo-img" />
@@ -38,9 +36,10 @@ import { RouterLink, RouterView } from 'vue-router';
   padding: 1rem 2rem;
   font-family: 'Bebas Neue', sans-serif;
   display: flex;
-  justify-content: space-between; /* Espaces entre la gauche, le centre et la droite */
+  justify-content: space-between; 
   align-items: center;
-  width: 100%; /* Assure que la barre de navigation occupe toute la largeur */
+  width: 100%; 
+  padding-left: 1rem;
 }
 
 .gauche {
@@ -54,19 +53,19 @@ import { RouterLink, RouterView } from 'vue-router';
 }
 
 .logo {
-  flex: 1; /* Permet de répartir l'espace de manière égale et de centrer le logo */
+  flex: 1;
   text-align: center;
 }
 
 .logo-img {
-  max-height: 120px; /* Ajuste la hauteur du logo */
-  object-fit: contain; /* Maintient les proportions de l'image */
-  transition: transform 0.3s ease, filter 0.3s ease; /* Ajout de la transition pour le zoom et l'inversion des couleurs */
+  max-height: 120px;
+  object-fit: contain;  
+  transition: transform 0.3s ease, filter 0.3s ease; 
 }
 
 .logo-img:hover {
-  transform: scale(1.1); /* Zoom au survol */
-  filter: invert(1); /* Inverse les couleurs de l'image au survol */
+  transform: scale(1.1);
+  filter: invert(1);
 }
 
 .nav-link {
@@ -89,12 +88,11 @@ import { RouterLink, RouterView } from 'vue-router';
 }
 
 .droite .nav-link {
-  margin-right: 20px; /* Espacement entre chaque lien */
+  margin-right: 20px;
 }
 
-/* Style des icônes */
 .profile-icon,
-.cart-icon{
+.cart-icon {
   width: 30px;
   height: 30px;
   object-fit: cover;
@@ -108,7 +106,6 @@ import { RouterLink, RouterView } from 'vue-router';
   filter: invert(1);
 }
 
-.search-icon:hover,
 .search-icon:hover {
   transform: scale(0.1);
   filter: invert(1);

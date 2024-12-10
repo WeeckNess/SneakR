@@ -22,8 +22,6 @@ import { RouterLink, RouterView } from 'vue-router';
         <RouterLink to="/cart" class="nav-link">
           <img src="../src/assets/Wishlist.png" alt="Cart" class="cart-icon" />
         </RouterLink>
-        <RouterLink to="/teste" class="nav-link"> 
-        </RouterLink>
       </nav>
     </div>
   </header>

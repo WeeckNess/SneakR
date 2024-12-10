@@ -18,11 +18,15 @@
         :key="product.id" 
         class="sneaker-card"
       >
-        <img :src="product.attributes.image.original || ''" alt="Sneaker" />
-        <h2>{{ product.attributes.name }}</h2>
-        <p><strong>Prix : </strong>{{ product.attributes.retailPrice }} €</p>
-        <!-- Bouton Ajouter au panier -->
-        <button @click="addToCart(product)" class="add-to-cart">Ajouter a la WishList</button>
+        <img :src="product.imageOriginale || ''" alt="Sneaker" />
+        <h2>{{ product.name }}</h2>
+        <p><strong>Prix du marché : </strong>{{ product.marketValue }} €</p>
+        <p><strong>Genre : </strong>{{ product.gender }}</p>
+        <p><strong>Date de création : </strong>{{ new Date(product.releaseDate).toLocaleDateString() }}</p>
+        <!-- Bouton Ajouter à la Wishlist -->
+        <button @click="addToCart(product)" class="add-to-cart">
+          Ajouter à la WishList
+        </button>
       </div>
     </div>
 
@@ -43,79 +47,104 @@
   </div>
 </template>
 
-<script setup>
+<script>
 import { ref, onMounted } from 'vue';
 
-// Variables réactives
-const products = ref([]);
-const loading = ref(true);
-const error = ref('');
-const currentPage = ref(1);
-const totalPages = ref(0);
-const notificationMessage = ref('');
-let notificationTimeout;
+export default {
+  setup() {
+    // Variables réactives
+    const products = ref([]);
+    const loading = ref(true);
+    const error = ref('');
+    const currentPage = ref(1);
+    const totalPages = ref(0);
+    const notificationMessage = ref('');
+    let notificationTimeout;
 
-// Charger les sneakers
-const loadProducts = async (page = 1) => {
-  loading.value = true;
-  error.value = '';
+    // Charger les sneakers
+    const loadProducts = async (page = 1) => {
+      loading.value = true;
+      error.value = '';
 
-  try {
-    const response = await fetch(`http://54.37.12.181:1337/api/sneakers?pagination%5Bpage%5D=${page}`);
-    if (!response.ok) throw new Error('Erreur lors du chargement des données.');
+      try {
+        const response = await fetch(`http://localhost:3100/sneakers?page=${page}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
 
-    const data = await response.json();
-    products.value = data.data;
-    totalPages.value = data.meta.pagination.pageCount;
-  } catch (err) {
-    error.value = 'Impossible de charger les sneakers.';
-    console.error(err);
-  } finally {
-    loading.value = false;
+        if (!response.ok) throw new Error('Erreur lors du chargement des données.');
+
+        const data = await response.json();
+        products.value = data.items; // Ajustez selon la structure des données de votre API
+        totalPages.value = data.totalPages; // Assurez-vous que votre API renvoie le nombre total de pages
+      } catch (err) {
+        error.value = 'Impossible de charger les sneakers.';
+        console.error(err);
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    // Fonction pour changer de page
+    const changePage = async (page) => {
+      if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page;
+        await loadProducts(page);
+      }
+    };
+
+    // Ajouter un produit à la Wishlist
+    const addToCart = async (product) => {
+      const userId = 1; // Remplacez ceci par l'ID de l'utilisateur connecté
+
+      try {
+        const response = await fetch('http://localhost:3100/wishlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, productId: product.id }),
+        });
+
+        if (!response.ok) throw new Error('Erreur lors de l\'ajout à la wishlist.');
+
+        const data = await response.json();
+        showNotification(`${product.name} a été ajouté à la Wishlist.`);
+      } catch (err) {
+        console.error(err);
+        showNotification('Impossible d\'ajouter le produit à la Wishlist.');
+      }
+    };
+
+    // Afficher une notification CSS
+    const showNotification = (message) => {
+      notificationMessage.value = message;
+      clearTimeout(notificationTimeout);
+      notificationTimeout = setTimeout(() => {
+        notificationMessage.value = '';
+      }, 3000); // La notification disparaît après 3 secondes
+    };
+
+    // Charger les produits au montage
+    onMounted(() => {
+      loadProducts(currentPage.value);
+    });
+
+    return {
+      products,
+      loading,
+      error,
+      currentPage,
+      totalPages,
+      notificationMessage,
+      loadProducts,
+      changePage,
+      addToCart
+    };
   }
 };
-
-// Fonction pour changer de page
-const changePage = async (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-    await loadProducts(page);
-  }
-};
-
-// Ajouter un produit au panier
-const addToCart = (product) => {
-  const storedCart = localStorage.getItem('cart');
-  let cart = storedCart ? JSON.parse(storedCart) : [];
-
-  // Vérifier si le produit existe déjà
-  const exists = cart.some((item) => item.id === product.id);
-  if (!exists) {
-    cart.push(product);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    showNotification(`${product.attributes.name} a été ajouté a la Wishlist.`);
-  } else {
-    showNotification(`${product.attributes.name} est déjà dans le Wishlist.`);
-  }
-};
-
-// Afficher une notification CSS
-const showNotification = (message) => {
-  notificationMessage.value = message;
-  clearTimeout(notificationTimeout);
-  notificationTimeout = setTimeout(() => {
-    notificationMessage.value = '';
-  }, 3000); // La notification disparaît après 3 secondes
-};
-
-// Charger les produits au montage
-onMounted(() => {
-  loadProducts(currentPage.value);
-});
 </script>
 
 <style scoped>
-/* Notification CSS */
+/* Styles identiques à ceux de la page Home */
 .notification {
   position: fixed;
   top: 20px;
@@ -144,7 +173,6 @@ onMounted(() => {
   }
 }
 
-/* Grille des produits */
 .sneaker-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -174,7 +202,6 @@ onMounted(() => {
   border-radius: 8px;
 }
 
-/* Bouton Ajouter au panier */
 .add-to-cart {
   margin-top: 10px;
   padding: 10px 20px;
@@ -190,7 +217,6 @@ onMounted(() => {
   background-color: #555;
 }
 
-/* Pagination */
 .pagination {
   display: flex;
   justify-content: center;

@@ -22,7 +22,7 @@
         <h2>{{ product.attributes.name }}</h2>
         <p><strong>Prix : </strong>{{ product.attributes.retailPrice }} €</p>
         <!-- Bouton Ajouter au panier -->
-        <button @click="addToCart(product)" class="add-to-cart">Ajouter au panier</button>
+        <button @click="addToCart(product)" class="add-to-cart">Ajouter a la WishList</button>
       </div>
     </div>
 
@@ -93,9 +93,9 @@ const addToCart = (product) => {
   if (!exists) {
     cart.push(product);
     localStorage.setItem('cart', JSON.stringify(cart));
-    showNotification(`${product.attributes.name} a été ajouté au panier.`);
+    showNotification(`${product.attributes.name} a été ajouté a la Wishlist.`);
   } else {
-    showNotification(`${product.attributes.name} est déjà dans le panier.`);
+    showNotification(`${product.attributes.name} est déjà dans le Wishlist.`);
   }
 };
 

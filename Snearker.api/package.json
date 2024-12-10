@@ -1,0 +1,34 @@
+{
+  "name": "snearker-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Strapi application",
+  "scripts": {
+    "scrape": "node script-scraping.js",
+    "build": "strapi build",
+    "deploy": "strapi deploy",
+    "develop": "strapi develop",
+    "start": "strapi start",
+    "strapi": "strapi"
+  },
+  "dependencies": {
+    "@strapi/plugin-cloud": "5.5.0",
+    "@strapi/plugin-documentation": "^5.5.0",
+    "@strapi/plugin-users-permissions": "5.5.0",
+    "@strapi/strapi": "5.5.0",
+    "axios": "^1.7.9",
+    "better-sqlite3": "11.3.0",
+    "node-fetch": "^2.7.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^6.0.0",
+    "styled-components": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0 <=22.x.x",
+    "npm": ">=6.0.0"
+  },
+  "strapi": {
+    "uuid": "096aab18-37ac-47f8-b76b-e2f109f54148"
+  }
+}

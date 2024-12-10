@@ -1,0 +1,23 @@
+services:
+  phpmyadmin:
+    container_name: sneakr-phpmyadmin
+    image: phpmyadmin
+    environment:
+      - PMA_HOST=sneakr-database
+    ports:
+      - "8080:80"
+    networks:
+      - sneakr-network
+
+  database:
+    container_name: sneakr-database
+    image: mariadb
+    environment:
+      - MARIADB_ROOT_PASSWORD=sneakr
+    ports:
+      - "3306:3306"
+    networks:
+      - sneakr-network
+
+networks:
+  sneakr-network:

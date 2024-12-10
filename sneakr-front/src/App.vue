@@ -6,7 +6,7 @@ import { RouterLink, RouterView } from 'vue-router';
   <header>
     <div class="wrapper">
       <nav class="gauche">
-        <RouterLink to="/fiofia" class="nav-link">
+        <RouterLink to="/search" class="nav-link">
           <img src="../src/assets/Search logo.png" alt="Logo" class="search-logo" />
         </RouterLink>
       </nav>
@@ -20,7 +20,7 @@ import { RouterLink, RouterView } from 'vue-router';
           <img src="../src/assets/User Profile Logo.png" alt="Profile" class="profile-icon" />
         </RouterLink>
         <RouterLink to="/cart" class="nav-link">
-          <img src="../src/assets/Shopping Cart Icon.png" alt="Cart" class="cart-icon" />
+          <img src="../src/assets/Wishlist.png" alt="Cart" class="cart-icon" />
         </RouterLink>
       </nav>
     </div>

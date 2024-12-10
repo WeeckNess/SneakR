@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "scrapt": "node scripts/script-scraping.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

@@ -3,7 +3,7 @@
 </script>
 
 <template setup>
-<p> profile place</p>
+<p> profile place and </p>
 </template>
 
 <style setup>

@@ -1,6 +1,6 @@
 <template>
   <div class="cart">
-    <h1>Votre Panier</h1>
+    <h1>Votre Wishlist</h1>
     <div v-if="cart.length > 0">
       <div v-for="(product, index) in cart" :key="index" class="cart-item">
         <h3>{{ product.attributes?.name || "Nom indisponible" }}</h3>
@@ -8,10 +8,10 @@
         <p><strong>Prix : </strong>{{ product.attributes?.retailPrice || "N/A" }} €</p>
         <button @click="removeFromCart(index)">Retirer</button>
       </div>
-      <button @click="clearCart">Vider le panier</button>
+      <button @click="clearCart">Vider la WishList</button>
     </div>
     <div v-else>
-      <p>Votre panier est vide.</p>
+      <p>Votre WishList est vide.</p>
     </div>
   </div>
 </template>

@@ -13,11 +13,13 @@ services:
     container_name: sneakr-database
     image: mariadb
     environment:
-      - MARIADB_ROOT_PASSWORD=sneakr
+      - MARIADB_ROOT_PASSWORD=thom
     ports:
       - "3306:3306"
     networks:
       - sneakr-network
+    volumes:
+      - ./sneaker.db:/var/lib/mysql
 
 networks:
   sneakr-network:

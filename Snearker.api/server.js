@@ -2,25 +2,27 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql');
 const dotenv = require('dotenv').config();
-const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
 const app = express();
 
 // Configuration CORS
 app.use(cors({
-  origin: 'http://localhost:5173', // Permettre uniquement cette origine
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Méthodes autorisées
-  allowedHeaders: ['Content-Type', 'Authorization'] // En-têtes autorisés
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Middleware pour analyser le corps des requêtes JSON
+// Middleware pour analyser les requêtes JSON
 app.use(express.json());
 
-// Connexion à MySQL avec gestion des erreurs
+// Connexion à MySQL
 const connection = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 });
 
 connection.connect(err => {
@@ -31,171 +33,58 @@ connection.connect(err => {
   console.log('Connecté à la base de données MySQL.');
 });
 
-// Route pour obtenir la liste des produits avec pagination
-app.get('/sneakers', (req, res) => {
-  const page = parseInt(req.query.page) || 1; // Page demandée, par défaut 1
-  const limit = parseInt(req.query.limit) || 12; // Nombre d'éléments par page, par défaut 10
-  const offset = (page - 1) * limit;
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
 
-  const sql = `
-    SELECT name, brand, colorway, marketValue, gender, imageOriginale, ImageThumbnail, releaseDate 
-    FROM All_SneakR
-    LIMIT ? OFFSET ?;
-  `;
-  const countSql = `SELECT COUNT(*) AS total FROM All_SneakR;`;
+const upload = multer({ storage });
 
-  connection.query(countSql, (countErr, countResults) => {
-    if (countErr) {
-      console.error('Erreur lors du comptage des produits :', countErr.message);
-      return res.status(500).send({ error: 'Erreur lors du comptage des produits.' });
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Login route
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  const sql = `SELECT * FROM User WHERE username = ?`;
+  connection.query(sql, [username], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors de la connexion.' });
     }
 
-    const totalItems = countResults[0].total;
-    const totalPages = Math.ceil(totalItems / limit);
+    if (results.length === 0) {
+      return res.status(401).json({ error: 'Utilisateur non trouvé.' });
+    }
 
-    connection.query(sql, [limit, offset], (err, results) => {
-      if (err) {
-        console.error('Erreur lors de la récupération des produits :', err.message);
-        return res.status(500).send({ error: 'Erreur lors de la récupération des produits.' });
-      }
+    const user = results[0];
 
-      res.send({
-        items: results,
-        totalPages,
-        totalItems,
-        currentPage: page
-      });
-    });
+    if (user.password !== password) {
+      return res.status(401).json({ error: 'Mot de passe incorrect.' });
+    }
+
+    const token = jwt.sign({ id: user.id, username: user.username }, 'your_jwt_secret', { expiresIn: '1h' });
+    res.json({ token, userId: user.id, username: user.username });
   });
 });
 
-app.post('/wishlist', (req, res) => {
-    const { userId, productId } = req.body;
-  
-    if (!userId || !productId) {
-      return res.status(400).json({ error: 'userId et productId sont requis.' });
-    }
-  
-    const sql = `
-      INSERT INTO wishlist (user_id, product_id)
-      VALUES (?, ?)
-    `;
-  
-    connection.query(sql, [userId, productId], (err, result) => {
-      if (err) {
-        console.error('Erreur lors de l\'ajout à la wishlist :', err.message);
-        return res.status(500).json({ error: 'Erreur lors de l\'ajout à la wishlist.' });
-      }
-  
-      res.status(201).json({ message: 'Produit ajouté à la wishlist.', id: result.insertId });
-    });
-});
-
-app.get('/wishlist/:userId', (req, res) => {
-    const { userId } = req.params;
-  
-    const sql = `
-      SELECT w.id, p.name, p.marketValue, p.imageOriginale, w.created_at
-      FROM wishlist w
-      JOIN All_SneakR p ON w.product_id = p.id
-      WHERE w.user_id = ?
-    `;
-  
-    connection.query(sql, [userId], (err, results) => {
-      if (err) {
-        console.error('Erreur lors de la récupération de la wishlist :', err.message);
-        return res.status(500).json({ error: 'Erreur lors de la récupération de la wishlist.' });
-      }
-  
-      res.json(results);
-    });
-});
-
-app.get('/users', (req, res) => {
-    const sql = `SELECT id, username, role FROM User`;
-  
-    connection.query(sql, (err, results) => {
-      if (err) {
-        console.error('Erreur lors de la récupération des utilisateurs :', err.message);
-        return res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs.' });
-      }
-  
-      res.json(results);
-    });
-  });
-
-app.get('/users/:userId', (req, res) => {
-    const { userId } = req.params;
-  
-    const sql = `SELECT id, username, role FROM User WHERE id = ?`;
-
-    connection.query(sql, [userId], (err, results) => {
-      if (err) {
-        console.error('Erreur lors de la récupération de l\'utilisateur :', err.message);
-        return res.status(500).json({ error: 'Erreur lors de la récupération de l\'utilisateur.' });
-      }
-      if (results.length === 0) {
-        return res.status(404).json({ error: 'Utilisateur introuvable.' });
-      }
-      res.json(results[0]);
-    });
-    });
-
-
-// Route pour gérer la connexion
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-  
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username et mot de passe requis.' });
-    }
-  
-    const sql = `SELECT id, username, password FROM User WHERE username = ?`;
-    connection.query(sql, [username], async (err, results) => {
-      if (err) {
-        console.error('Erreur lors de la connexion :', err.message);
-        return res.status(500).json({ error: 'Erreur lors de la connexion.' });
-      }
-  
-      if (results.length === 0) {
-        return res.status(401).json({ error: 'Utilisateur introuvable.' });
-      }
-  
-      const user = results[0];
-      try {
-        // Vérifier le mot de passe
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-          return res.status(401).json({ error: 'Mot de passe incorrect.' });
-        }
-  
-        // Connecter l'utilisateur
-        res.json({ userId: user.id, username: user.username });
-      } catch (error) {
-        console.error('Erreur lors de la vérification du mot de passe :', error.message);
-        return res.status(500).json({ error: 'Erreur lors de la vérification du mot de passe.' });
-      }
-    });
-  });
-// Route pour gérer l'inscription
-app.post('/register', async (req, res) => {
+// Register route
+app.post('/register', (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
     return res.status(400).json({ error: 'Username et mot de passe requis.' });
   }
 
-  // Hash le mot de passe avant de l'enregistrer
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const sql = `INSERT INTO User (username, password) VALUES (?, ?)`;
 
-  const sql = `
-    INSERT INTO User (username, password)
-    VALUES (?, ?)
-  `;
-
-  connection.query(sql, [username, hashedPassword], (err, result) => {
+  connection.query(sql, [username, password], (err, result) => {
     if (err) {
-      console.error('Erreur lors de l\'inscription :', err.message);
       return res.status(500).json({ error: 'Erreur lors de l\'inscription.' });
     }
 
@@ -203,13 +92,125 @@ app.post('/register', async (req, res) => {
   });
 });
 
-// Route pour gérer la déconnexion
-app.post('/logout', (req, res) => {
-  // Effacer la session de l'utilisateur ici, par exemple, en supprimant le cookie ou la session
-  res.json({ message: 'Déconnecté.' });
+// Route to get all sneakers with pagination
+app.get('/sneakers', (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
+  const countSql = `SELECT COUNT(*) AS total FROM All_SneakR;`;
+
+  connection.query(countSql, (countErr, countResults) => {
+    if (countErr) {
+      return res.status(500).json({ error: 'Erreur lors du comptage des produits.' });
+    }
+
+    const totalItems = countResults[0].total;
+    const totalPages = Math.ceil(totalItems / limit);
+
+    const sql = `SELECT * FROM All_SneakR LIMIT ? OFFSET ?`;
+    connection.query(sql, [limit, offset], (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
+      }
+
+      res.json({ items: results, totalPages, totalItems, currentPage: page });
+    });
+  });
 });
 
-// Démarrage du serveur
+// Route to get wishlist for a specific user (authentication required)
+app.get('/wishlist/:userId', authenticateToken, (req, res) => {
+  const userId = req.params.userId;
+
+  if (req.user.id !== parseInt(userId)) {
+    return res.status(403).json({ error: 'Accès interdit à cette wishlist.' });
+  }
+
+  const sql = `
+    SELECT w.id, p.name, p.marketValue, p.imageOriginale, w.created_at
+    FROM wishlist w
+    JOIN All_SneakR p ON w.product_id = p.id
+    WHERE w.user_id = ?
+  `;
+
+  connection.query(sql, [userId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération de la wishlist.' });
+    }
+
+    res.json(results);
+  });
+});
+
+// Route to get all wishlists
+app.get('/wishlist', (req, res) => {
+  const sql = `
+    SELECT w.id, w.user_id, p.name, p.marketValue, p.imageOriginale, w.created_at
+    FROM wishlist w
+    JOIN All_SneakR p ON w.product_id = p.id
+  `;
+
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('Erreur lors de la récupération des wishlists :', err.message);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des wishlists.' });
+    }
+
+    res.status(200).json({ wishlists: results });
+  });
+});
+
+// Route to upload profile image
+app.post('/upload-profile-image', authenticateToken, upload.single('profileImage'), (req, res) => {
+  const userId = req.user.id;
+  const imageUrl = `/uploads/${req.file.filename}`;
+
+  const sql = `INSERT INTO Media (user_id, image_url) VALUES (?, ?)`;
+
+  connection.query(sql, [userId, imageUrl], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors du téléchargement de l\'image de profil.' });
+    }
+
+    res.status(201).json({ imageUrl });
+  });
+});
+
+// Route to get profile image for a specific user
+app.get('/profile-image/:userId', (req, res) => {
+  const userId = req.params.userId;
+
+  const sql = `SELECT image_url FROM Media WHERE user_id = ? ORDER BY id DESC LIMIT 1`;
+
+  connection.query(sql, [userId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors de la récupération de l\'image de profil.' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Image de profil non trouvée.' });
+    }
+
+    res.json({ imageUrl: results[0].image_url });
+  });
+});
+
+// Middleware to authenticate token
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, 'your_jwt_secret', (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
+// Start the server
 app.listen(3100, () => {
   console.log('Serveur démarré sur le port 3100');
 });

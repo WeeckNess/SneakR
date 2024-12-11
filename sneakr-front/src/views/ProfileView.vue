@@ -1,9 +1,9 @@
 <script setup>
-  import teste from '../components/Profile.vue'
+  import Profile from '../components/Profile.vue'
 </script>
 
 <template>
   <main>
-    <teste />
+    <Profile />
   </main>
 </template>

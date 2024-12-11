@@ -1,160 +1,149 @@
 <template>
-  <div class="login-container">
-    <h1 class="title">{{ isLoggedIn ? 'Profil' : 'Connexion' }}</h1>
-
-    <!-- Formulaire de connexion ou de mise à jour de profil -->
-    <form @submit.prevent="isLoggedIn ? updateProfile() : login()" class="login-form">
-      <div v-if="!isLoggedIn">
-        <div class="form-group">
-          <label for="username">Nom d'utilisateur</label>
-          <input type="text" v-model="username" id="username" class="form-control" required />
-        </div>
-        <div class="form-group">
-          <label for="password">Mot de passe</label>
-          <input type="password" v-model="password" id="password" class="form-control" required />
-        </div>
-        <button type="submit" class="btn btn-primary">Se Connecter</button>
-        <p v-if="error" class="error">{{ error }}</p>
+  <div class="profile-container">
+    <h1 class="title">Profile</h1>
+    <div v-if="isLoggedIn">
+      <button @click="logout" class="logout-button">Disconnect</button>
+      <div class="profile-image-container">
+        <img :src="profileImage" alt="Profile Image" v-if="profileImage" class="profile-image" />
+        <input type="file" @change="uploadProfileImage" />
       </div>
-
-      <div v-if="isLoggedIn">
-        <div class="form-group">
-          <label for="username">Nom d'utilisateur</label>
-          <input type="text" v-model="username" id="username" class="form-control" />
-        </div>
-        <div class="form-group">
-          <label for="password">Mot de passe</label>
-          <input type="password" v-model="password" id="password" class="form-control" />
-        </div>
-        <button type="submit" class="btn btn-primary">Mettre à jour</button>
-        <p v-if="profileError" class="error">{{ profileError }}</p>
+      <div class="wishlist">
+        <h2>Your Wishlist</h2>
+        <ul>
+          <li v-for="item in wishlist" :key="item.id">
+            <img :src="item.imageOriginale" alt="Sneaker Image" class="sneaker-image" />
+            <div class="sneaker-details">
+              <h3>{{ item.name }}</h3>
+              <p>Market Value: {{ item.marketValue }}</p>
+            </div>
+          </li>
+        </ul>
       </div>
-    </form>
-
-    <h2 v-if="isLoggedIn" class="wishlist-title">Wishlist</h2>
-    <div v-if="isLoggedIn && loading" class="loading">Chargement...</div>
-    <ul v-if="isLoggedIn && wishlist.length > 0">
-      <li v-for="item in wishlist" :key="item.id" class="wishlist-item">
-        <img :src="item.imageOriginale || ''" alt="Sneaker" class="wishlist-image" />
-        <div class="wishlist-details">
-          <p>{{ item.name }} - {{ item.marketValue }} €</p>
+    </div>
+    <div v-else>
+      <form @submit.prevent="login" class="login-form">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" v-model="username" required />
         </div>
-      </li>
-    </ul>
-    <p v-else-if="isLoggedIn">Aucune wishlist disponible.</p>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" v-model="password" required />
+        </div>
+        <button type="submit" class="login-button">Login</button>
+      </form>
+    </div>
   </div>
 </template>
 
-&<script>
+<script setup>
 import { ref, onMounted } from 'vue';
+import { jwtDecode } from 'jwt-decode';
 
-export default {
-  setup() {
-    const username = ref('');
-    const password = ref('');
-    const wishlist = ref([]);
-    const loading = ref(true);
-    const error = ref('');
-    const profileError = ref('');
-    const isLoggedIn = ref(false);
+// Reactive variables
+const isLoggedIn = ref(false);
+const userId = ref(null);
+const username = ref('');
+const password = ref('');
+const wishlist = ref([]);
+const profileImage = ref('');
 
-    const loadProfile = async () => {
-      try {
-        const userResponse = await fetch('http://localhost:3100/api/login', { // Mis à jour pour correspondre à l'URL correcte
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!userResponse.ok) throw new Error('Erreur lors du chargement des données utilisateur.');
-
-        const userData = await userResponse.json();
-        if (userData) {
-          isLoggedIn.value = true;
-          username.value = userData.username;
-
-          const wishlistResponse = await fetch(`http://localhost:3100/api/wishlist/${userData.userId}`, { // Mis à jour pour correspondre à l'URL correcte
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-          });
-
-          if (!wishlistResponse.ok) throw new Error('Erreur lors du chargement de la wishlist.');
-
-          const wishlistData = await wishlistResponse.json();
-          wishlist.value = wishlistData;
-        }
-      } catch (err) {
-        error.value = 'Impossible de charger les données.';
-        console.error(err);
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    const login = async () => {
-      try {
-        const response = await fetch('http://localhost:3100/login', { // Mis à jour pour correspondre à l'URL correcte
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: username.value, password: password.value }),
-        });
-
-        if (!response.ok) throw new Error('Erreur de connexion.');
-
-        const userData = await response.json();
-        if (userData) {
-          isLoggedIn.value = true;
-          username.value = userData.username;
-        }
-      } catch (err) {
-        error.value = 'Nom d\'utilisateur ou mot de passe incorrect.';
-        console.error(err);
-      }
-    };
-
-    const updateProfile = async () => {
-      try {
-        const response = await fetch('http://localhost:3100/api/update-profile', { // Mis à jour pour correspondre à l'URL correcte
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: username.value, password: password.value }),
-        });
-
-        if (!response.ok) throw new Error('Erreur lors de la mise à jour du profil.');
-
-        const updatedData = await response.json();
-        console.log('Profil mis à jour :', updatedData);
-      } catch (err) {
-        profileError.value = 'Impossible de mettre à jour le profil.';
-        console.error(err);
-      }
-    };
-
-    onMounted(() => {
-      loadProfile();
-    });
-
-    return {
-      username,
-      password,
-      wishlist,
-      loading,
-      error,
-      profileError,
-      isLoggedIn,
-      login,
-      updateProfile,
-    };
-  },
+// Function to handle login
+const login = async () => {
+  const response = await fetch('http://localhost:3100/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: username.value, password: password.value }),
+  });
+  if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem('token', data.token);
+    userId.value = data.userId;
+    isLoggedIn.value = true;
+    loadWishlist(data.userId);
+    loadProfileImage(data.userId);
+  }
 };
+
+// Function to load wishlist
+const loadWishlist = async (id) => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`http://localhost:3100/wishlist/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.ok) {
+    wishlist.value = await response.json();
+  }
+};
+
+// Function to load profile image
+const loadProfileImage = async (id) => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`http://localhost:3100/profile-image/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.ok) {
+    const data = await response.json();
+    profileImage.value = data.imageUrl;
+  }
+};
+
+// Function to upload profile image
+const uploadProfileImage = async (event) => {
+  const file = event.target.files[0];
+  if (!file) {
+    console.error('No file selected');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('profileImage', file);
+
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:3100/upload-profile-image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    profileImage.value = data.imageUrl;
+  }
+};
+
+// Function to handle logout
+const logout = () => {
+  localStorage.removeItem('token');
+  isLoggedIn.value = false;
+  username.value = '';
+  wishlist.value = [];
+  profileImage.value = '';
+};
+
+// Function to check token and load user data on mount
+const checkToken = () => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    const decoded = jwtDecode(token);
+    userId.value = decoded.id;
+    isLoggedIn.value = true;
+    loadWishlist(decoded.id);
+    loadProfileImage(decoded.id);
+  }
+};
+
+// Call checkToken on component mount
+onMounted(checkToken);
 </script>
 
 <style scoped>
-.login-container {
+.profile-container {
   width: 80%;
   margin: 0 auto;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
+  background-color: #f9f9f9;
 }
 
 .title {
@@ -164,7 +153,8 @@ export default {
   color: #333;
 }
 
-.login-form {
+.login-form,
+.wishlist {
   display: flex;
   flex-direction: column;
 }
@@ -174,64 +164,82 @@ export default {
 }
 
 .form-group label {
-  font-weight: bold;
   margin-bottom: 5px;
+  font-weight: bold;
 }
 
-.form-control {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  font-size: 16px;
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
-.btn {
-  width: 100px;
-  align-self: center;
-  padding: 5px;
+.login-button,
+.logout-button {
+  padding: 10px 20px;
   border: none;
-  color: white;
+  border-radius: 5px;
   background-color: #007bff;
-  border-radius: 3px;
+  color: white;
   cursor: pointer;
+  margin-top: 10px;
 }
 
-.btn:hover {
+.login-button:hover,
+.logout-button:hover {
   background-color: #0056b3;
 }
 
-.wishlist-title {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 20px;
+.profile-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.profile-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+
+.wishlist h2 {
+  margin-bottom: 15px;
   color: #333;
 }
 
-.loading {
-  text-align: center;
-  margin-top: 20px;
+.wishlist ul {
+  list-style-type: none;
+  padding: 0;
 }
 
-.wishlist-item {
+.wishlist li {
   display: flex;
   align-items: center;
-  margin: 10px 0;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: white;
 }
 
-.wishlist-image {
-  width: 50px;
-  height: 50px;
-  margin-right: 10px;
+.sneaker-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  margin-right: 15px;
 }
 
-.wishlist-details {
-  flex: 1;
+.sneaker-details h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
 }
 
-.error {
-  color: red;
-  text-align: center;
-  margin-top: 10px;
+.sneaker-details p {
+  margin: 5px 0 0;
+  color: #666;
 }
 </style>

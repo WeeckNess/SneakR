@@ -8,7 +8,6 @@
         <p><strong>Prix : </strong>{{ product.marketValue || "N/A" }} €</p>
         <button @click="removeFromWishlist(product.wishlistId)">Retirer</button>
       </div>
-      <button @click="clearWishlist">Vider la WishList</button>
     </div>
     <div v-else>
       <p>Votre WishList est vide.</p>
@@ -60,28 +59,6 @@ const removeFromWishlist = async (wishlistId) => {
       throw new Error('Erreur lors du retrait du produit de la wishlist.');
     }
     wishlist.value = wishlist.value.filter(product => product.wishlistId !== wishlistId);
-  } catch (err) {
-    console.error(err.message);
-  }
-};
-
-// Fonction pour vider la wishlist
-const clearWishlist = async () => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    console.error('Vous devez être connecté pour vider la wishlist.');
-    return;
-  }
-
-  try {
-    const response = await fetch('http://localhost:3100/wishlist', {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) {
-      throw new Error('Erreur lors du vidage de la wishlist.');
-    }
-    wishlist.value = [];
   } catch (err) {
     console.error(err.message);
   }

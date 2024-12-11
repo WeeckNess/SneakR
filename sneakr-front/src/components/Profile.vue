@@ -7,18 +7,6 @@
         <img :src="profileImage" alt="Profile Image" v-if="profileImage" class="profile-image" />
         <input type="file" @change="uploadProfileImage" />
       </div>
-      <div class="wishlist">
-        <h2>Your Wishlist</h2>
-        <ul>
-          <li v-for="item in wishlist" :key="item.id">
-            <img :src="item.imageOriginale" alt="Sneaker Image" class="sneaker-image" />
-            <div class="sneaker-details">
-              <h3>{{ item.name }}</h3>
-              <p>Market Value: {{ item.marketValue }}</p>
-            </div>
-          </li>
-        </ul>
-      </div>
     </div>
     <div v-else>
       <form @submit.prevent="login" class="login-form">
@@ -45,7 +33,6 @@ const isLoggedIn = ref(false);
 const userId = ref(null);
 const username = ref('');
 const password = ref('');
-const wishlist = ref([]);
 const profileImage = ref('');
 
 // Function to handle login
@@ -60,19 +47,7 @@ const login = async () => {
     localStorage.setItem('token', data.token);
     userId.value = data.userId;
     isLoggedIn.value = true;
-    loadWishlist(data.userId);
     loadProfileImage(data.userId);
-  }
-};
-
-// Function to load wishlist
-const loadWishlist = async (id) => {
-  const token = localStorage.getItem('token');
-  const response = await fetch(`http://localhost:3100/wishlist/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (response.ok) {
-    wishlist.value = await response.json();
   }
 };
 
@@ -116,7 +91,6 @@ const logout = () => {
   localStorage.removeItem('token');
   isLoggedIn.value = false;
   username.value = '';
-  wishlist.value = [];
   profileImage.value = '';
 };
 
@@ -127,7 +101,6 @@ const checkToken = () => {
     const decoded = jwtDecode(token);
     userId.value = decoded.id;
     isLoggedIn.value = true;
-    loadWishlist(decoded.id);
     loadProfileImage(decoded.id);
   }
 };
@@ -153,8 +126,7 @@ onMounted(checkToken);
   color: #333;
 }
 
-.login-form,
-.wishlist {
+.login-form {
   display: flex;
   flex-direction: column;
 }
@@ -203,43 +175,5 @@ onMounted(checkToken);
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 10px;
-}
-
-.wishlist h2 {
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.wishlist ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.wishlist li {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: white;
-}
-
-.sneaker-image {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  margin-right: 15px;
-}
-
-.sneaker-details h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #333;
-}
-
-.sneaker-details p {
-  margin: 5px 0 0;
-  color: #666;
 }
 </style>

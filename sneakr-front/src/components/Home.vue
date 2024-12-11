@@ -24,218 +24,177 @@
         <p><strong>Genre : </strong>{{ product.gender }}</p>
         <p><strong>Date de création : </strong>{{ new Date(product.releaseDate).toLocaleDateString() }}</p>
         <!-- Bouton Ajouter à la Wishlist -->
-        <button @click="addToCart(product)" class="add-to-cart">
+        <button @click="addToWishlist(product.id)" class="add-to-cart">
           Ajouter à la WishList
         </button>
       </div>
     </div>
 
     <!-- Pagination -->
-    <div v-if="totalPages > 1" class="pagination">
-      <button 
-        @click="changePage(currentPage - 1)" 
-        :disabled="currentPage === 1">
-        Précédent
-      </button>
+    <div class="pagination">
+      <button @click="prevPage" :disabled="currentPage === 1">Précédent</button>
       <span>Page {{ currentPage }} sur {{ totalPages }}</span>
-      <button 
-        @click="changePage(currentPage + 1)" 
-        :disabled="currentPage === totalPages">
-        Suivant
-      </button>
+      <button @click="nextPage" :disabled="currentPage === totalPages">Suivant</button>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from 'vue';
 
-export default {
-  setup() {
-    // Variables réactives
-    const products = ref([]);
-    const loading = ref(true);
-    const error = ref('');
-    const currentPage = ref(1);
-    const totalPages = ref(0);
-    const notificationMessage = ref('');
-    let notificationTimeout;
+const products = ref([]);
+const loading = ref(true);
+const error = ref(null);
+const notificationMessage = ref('');
+const currentPage = ref(1);
+const totalPages = ref(1);
 
-    // Charger les sneakers
-    const loadProducts = async (page = 1) => {
-      loading.value = true;
-      error.value = '';
-
-      try {
-        const response = await fetch(`http://localhost:3100/sneakers?page=${page}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (!response.ok) throw new Error('Erreur lors du chargement des données.');
-
-        const data = await response.json();
-        products.value = data.items; // Ajustez selon la structure des données de votre API
-        totalPages.value = data.totalPages; // Assurez-vous que votre API renvoie le nombre total de pages
-      } catch (err) {
-        error.value = 'Impossible de charger les sneakers.';
-        console.error(err);
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    // Fonction pour changer de page
-    const changePage = async (page) => {
-      if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page;
-        await loadProducts(page);
-      }
-    };
-
-    // Ajouter un produit à la Wishlist
-    const addToCart = async (product) => {
-      const userId = 1; // Remplacez ceci par l'ID de l'utilisateur connecté
-
-      try {
-        const response = await fetch('http://localhost:3100/wishlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, productId: product.id }),
-        });
-
-        if (!response.ok) throw new Error('Erreur lors de l\'ajout à la wishlist.');
-
-        const data = await response.json();
-        showNotification(`${product.name} a été ajouté à la Wishlist.`);
-      } catch (err) {
-        console.error(err);
-        showNotification('Impossible d\'ajouter le produit à la Wishlist.');
-      }
-    };
-
-    // Afficher une notification CSS
-    const showNotification = (message) => {
-      notificationMessage.value = message;
-      clearTimeout(notificationTimeout);
-      notificationTimeout = setTimeout(() => {
-        notificationMessage.value = '';
-      }, 3000); // La notification disparaît après 3 secondes
-    };
-
-    // Charger les produits au montage
-    onMounted(() => {
-      loadProducts(currentPage.value);
-    });
-
-    return {
-      products,
-      loading,
-      error,
-      currentPage,
-      totalPages,
-      notificationMessage,
-      loadProducts,
-      changePage,
-      addToCart
-    };
+const fetchProducts = async (page) => {
+  loading.value = true;
+  try {
+    const response = await fetch(`http://localhost:3100/sneakers?page=${page}`);
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération des produits.');
+    }
+    const data = await response.json();
+    products.value = data.items;
+    totalPages.value = data.totalPages;
+  } catch (err) {
+    error.value = err.message;
+  } finally {
+    loading.value = false;
   }
 };
+
+const addToWishlist = async (productId) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    notificationMessage.value = 'Vous devez être connecté pour ajouter à la wishlist.';
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:3100/wishlist', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ productId })
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors de l\'ajout à la wishlist.');
+    }
+
+    notificationMessage.value = 'Produit ajouté à la wishlist avec succès.';
+  } catch (err) {
+    notificationMessage.value = err.message;
+  } finally {
+    setTimeout(() => {
+      notificationMessage.value = '';
+    }, 3000);
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+    fetchProducts(currentPage.value);
+  }
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+    fetchProducts(currentPage.value);
+  }
+};
+
+onMounted(() => {
+  fetchProducts(currentPage.value);
+});
 </script>
 
 <style scoped>
-/* Styles identiques à ceux de la page Home */
 .notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: #333;
+  background-color: #4caf50;
   color: white;
-  padding: 15px 20px;
-  border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  animation: fadeInOut 3s forwards;
+  padding: 10px;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  10%, 90% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
+.loading {
+  text-align: center;
+  font-size: 18px;
+  color: #333;
+}
+
+.error {
+  text-align: center;
+  font-size: 18px;
+  color: red;
 }
 
 .sneaker-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 20px;
-  margin: 20px;
+  justify-content: center;
 }
 
 .sneaker-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px;
-  background-color: #fff;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.sneaker-card:hover {
-  transform: scale(1.05);
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 20px;
+  width: 200px;
+  text-align: center;
 }
 
 .sneaker-card img {
-  max-width: 100%;
+  width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: 5px;
 }
 
 .add-to-cart {
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #333;
+  background-color: #007bff;
   color: white;
   border: none;
+  padding: 10px;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  margin-top: 10px;
 }
 
 .add-to-cart:hover {
-  background-color: #555;
+  background-color: #0056b3;
 }
 
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 20px 0;
-  gap: 10px;
+  margin-top: 20px;
 }
 
 .pagination button {
-  padding: 10px 20px;
-  background-color: #333;
+  background-color: #007bff;
   color: white;
   border: none;
+  padding: 10px;
   border-radius: 5px;
   cursor: pointer;
+  margin: 0 10px;
 }
 
 .pagination button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+.pagination span {
+  font-size: 18px;
 }
 </style>

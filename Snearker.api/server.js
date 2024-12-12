@@ -55,7 +55,7 @@ function authenticateToken(req, res, next) {
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => { // Utilisation de la variable d'environnement pour la clé secrète JWT
     if (err) return res.status(403).json({ error: 'Jeton invalide ou expiré.' });
     req.user = user;
     next();
@@ -107,29 +107,36 @@ app.post('/register', (req, res) => {
 });
 
 // Route to get all sneakers with pagination
-app.get('/sneakers', async (req, res) => {
+app.get('/sneakers', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
 
   const countSql = `SELECT COUNT(*) AS total FROM All_SneakR;`;
 
-  try {
-    const [countResults] = await connection.promise().query(countSql);
+  connection.query(countSql, (countErr, countResults) => {
+    if (countErr) {
+      console.error('Erreur lors du comptage des produits :', countErr.message);
+      return res.status(500).json({ error: 'Erreur lors du comptage des produits.' });
+    }
+
     const totalItems = countResults[0].total;
     const totalPages = Math.ceil(totalItems / limit);
 
     const sql = `SELECT * FROM All_SneakR LIMIT ? OFFSET ?`;
-    const [results] = await connection.promise().query(sql, [limit, offset]);
-    res.json({ items: results, totalPages, totalItems, currentPage: page });
-  } catch (err) {
-    console.error('Erreur lors de la récupération des produits :', err.message);
-    res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
-  }
+    connection.query(sql, [limit, offset], (err, results) => {
+      if (err) {
+        console.error('Erreur lors de la récupération des produits :', err.message);
+        return res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
+      }
+
+      res.json({ items: results, totalPages, totalItems, currentPage: page });
+    });
+  });
 });
 
 // Route to get wishlist for the authenticated user
-app.get('/wishlist', authenticateToken, async (req, res) => {
+app.get('/wishlist', authenticateToken, (req, res) => {
   const userId = req.user.id;
 
   const sql = `
@@ -139,13 +146,14 @@ app.get('/wishlist', authenticateToken, async (req, res) => {
     WHERE w.user_id = ?
   `;
 
-  try {
-    const [results] = await connection.promise().query(sql, [userId]);
+  connection.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error('Erreur lors de la récupération de la wishlist :', err.message);
+      return res.status(500).json({ error: 'Erreur lors de la récupération de la wishlist.' });
+    }
+
     res.json(results);
-  } catch (err) {
-    console.error('Erreur lors de la récupération de la wishlist :', err.message);
-    res.status(500).json({ error: 'Erreur lors de la récupération de la wishlist.' });
-  }
+  });
 });
 
 // Route to add a sneaker to the wishlist (authentication required)
@@ -274,7 +282,7 @@ app.get('/search', (req, res) => {
   });
 });
 
-// Démarrage du serveur
-app.listen(process.env.PORT, () => {
-  console.log(`Serveur en écoute sur le port ${process.env.PORT}`);
+// Start the server
+app.listen(3100, () => {
+  console.log('Serveur démarré sur le port 3100');
 });

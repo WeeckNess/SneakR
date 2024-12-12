@@ -67,7 +67,7 @@ const search = async () => {
     console.error('Erreur lors de la recherche des produits.');
   }
 };
-</script>
+</script> 
 
 <style scoped>
 .search-bar {

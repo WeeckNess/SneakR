@@ -20,7 +20,7 @@ import { RouterLink, RouterView } from 'vue-router';
           <img src="../src/assets/User Profile Logo.png" alt="Profile" class="profile-icon" />
         </RouterLink>
         <RouterLink to="/Wishlist" class="nav-link">
-          <img src="../src/assets/Wishlist.png" alt="Wishlist" class="cart-icon" />
+          <img src="../src/assets/Wishlist.png" alt="Wishlist" class="wishlist-icon" />
         </RouterLink>
       </nav>
     </div>
@@ -31,14 +31,18 @@ import { RouterLink, RouterView } from 'vue-router';
 </template>
 
 <style scoped>
+.header {
+  width: 100%;
+}
+
 .wrapper {
   background-color: white;
-  padding: 1rem 2rem;
+  padding: 1rem;
   font-family: 'Bebas Neue', sans-serif;
   display: flex;
   justify-content: space-between; 
   align-items: center;
-  width: 100%; 
+  /* width: 100%;  */
   padding-left: 1rem;
 }
 
@@ -49,7 +53,9 @@ import { RouterLink, RouterView } from 'vue-router';
 
 .droite {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  /* margin-right: 5%; */
+  /* padding-right: 5%; */
 }
 
 .logo {
@@ -87,12 +93,8 @@ import { RouterLink, RouterView } from 'vue-router';
   background-color: #ffffff;
 }
 
-.droite .nav-link {
-  margin-right: 20px;
-}
-
 .profile-icon,
-.cart-icon {
+.wishlist-icon {
   width: 30px;
   height: 30px;
   object-fit: cover;
@@ -100,7 +102,7 @@ import { RouterLink, RouterView } from 'vue-router';
   transition: transform 0.3s ease, filter 0.3s ease;
 }
 
-.cart-icon:hover,
+.wishlist-icon:hover,
 .profile-icon:hover {
   transform: scale(1.1);
   filter: invert(1);

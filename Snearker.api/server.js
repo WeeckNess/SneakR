@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql');
-const dotenv = require('dotenv').config();
+const dotenv = require('dotenv').config(); // Load environment variables
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
@@ -55,8 +55,8 @@ function authenticateToken(req, res, next) {
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, 'your_jwt_secret', (err, user) => {
-    if (err) return res.sendStatus(403);
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Jeton invalide ou expiré.' });
     req.user = user;
     next();
   });
@@ -82,7 +82,7 @@ app.post('/login', (req, res) => {
       return res.status(401).json({ error: 'Mot de passe incorrect.' });
     }
 
-    const token = jwt.sign({ id: user.id, username: user.username }, 'your_jwt_secret', { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, userId: user.id, username: user.username });
   });
 });
@@ -107,34 +107,29 @@ app.post('/register', (req, res) => {
 });
 
 // Route to get all sneakers with pagination
-app.get('/sneakers', (req, res) => {
+app.get('/sneakers', async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const offset = (page - 1) * limit;
 
   const countSql = `SELECT COUNT(*) AS total FROM All_SneakR;`;
 
-  connection.query(countSql, (countErr, countResults) => {
-    if (countErr) {
-      return res.status(500).json({ error: 'Erreur lors du comptage des produits.' });
-    }
-
+  try {
+    const [countResults] = await connection.promise().query(countSql);
     const totalItems = countResults[0].total;
     const totalPages = Math.ceil(totalItems / limit);
 
     const sql = `SELECT * FROM All_SneakR LIMIT ? OFFSET ?`;
-    connection.query(sql, [limit, offset], (err, results) => {
-      if (err) {
-        return res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
-      }
-
-      res.json({ items: results, totalPages, totalItems, currentPage: page });
-    });
-  });
+    const [results] = await connection.promise().query(sql, [limit, offset]);
+    res.json({ items: results, totalPages, totalItems, currentPage: page });
+  } catch (err) {
+    console.error('Erreur lors de la récupération des produits :', err.message);
+    res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
+  }
 });
 
 // Route to get wishlist for the authenticated user
-app.get('/wishlist', authenticateToken, (req, res) => {
+app.get('/wishlist', authenticateToken, async (req, res) => {
   const userId = req.user.id;
 
   const sql = `
@@ -144,13 +139,13 @@ app.get('/wishlist', authenticateToken, (req, res) => {
     WHERE w.user_id = ?
   `;
 
-  connection.query(sql, [userId], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération de la wishlist.' });
-    }
-
+  try {
+    const [results] = await connection.promise().query(sql, [userId]);
     res.json(results);
-  });
+  } catch (err) {
+    console.error('Erreur lors de la récupération de la wishlist :', err.message);
+    res.status(500).json({ error: 'Erreur lors de la récupération de la wishlist.' });
+  }
 });
 
 // Route to add a sneaker to the wishlist (authentication required)
@@ -227,7 +222,7 @@ app.post('/upload-profile-image', authenticateToken, upload.single('profileImage
 app.get('/profile-image/:userId', (req, res) => {
   const userId = req.params.userId;
 
-  const sql = `SELECT media FROM User WHERE id = ?`;
+  const sql = `SELECT profile_image FROM User WHERE id = ?`;
 
   connection.query(sql, [userId], (err, results) => {
     if (err) {
@@ -243,7 +238,43 @@ app.get('/profile-image/:userId', (req, res) => {
   });
 });
 
-// Start the server
-app.listen(3100, () => {
-  console.log('Serveur démarré sur le port 3100');
+// Route to search sneakers with filters
+app.get('/search', (req, res) => {
+  const { brand, minMarketValue, maxMarketValue, gender } = req.query;
+
+  let sql = `SELECT * FROM All_SneakR WHERE 1=1`;
+  const params = [];
+
+  if (brand) {
+    sql += ` AND brand = ?`;
+    params.push(brand);
+  }
+
+  if (minMarketValue) {
+    sql += ` AND marketValue >= ?`;
+    params.push(minMarketValue);
+  }
+
+  if (maxMarketValue) {
+    sql += ` AND marketValue <= ?`;
+    params.push(maxMarketValue);
+  }
+
+  if (gender) {
+    sql += ` AND gender = ?`;
+    params.push(gender);
+  }
+
+  connection.query(sql, params, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors de la recherche des produits.' });
+    }
+
+    res.json(results);
+  });
+});
+
+// Démarrage du serveur
+app.listen(process.env.PORT, () => {
+  console.log(`Serveur en écoute sur le port ${process.env.PORT}`);
 });

@@ -12,17 +12,23 @@
         :key="product.id" 
         class="sneaker-card"
       >
-        <img :src="product.imageOriginale || ''" alt="Sneaker" />
+        <!-- Image du produit -->
+        <div class="product-image">
+          <img :src="product.imageOriginale || ''" alt="Sneaker" />
+        </div>
+
+        <!-- Informations des sneakers -->
         <div class="sneaker-info">
           <h2>{{ product.name }}</h2>
           <p><strong>Prix : </strong>{{ product.marketValue }} €</p>
           <p><strong>Genre : </strong>{{ product.gender }}</p>
           <p><strong>Date : </strong>{{ new Date(product.releaseDate).toLocaleDateString() }}</p>
         </div>
+
         <!-- Boutons wishlist et collection -->
         <div class="actions">
           <button @click="addToWishlist(product.id)" class="wishlist-button">
-            <img src="@/assets/Wishlist.png" alt="Wishlist" class="wishlist-icon" />
+            <img src="@/assets/Wishlist.png" alt="Wishlist" />
           </button>
           <button @click="addToCollection(product.id)" class="collection-button">
             Ajouter à la collection
@@ -30,6 +36,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Pagination -->
+    <div class="pagination" v-if="products.length > 0">
+      <button @click="previousPage" :disabled="currentPage === 1">Précédent</button>
+      <span>Page {{ currentPage }}</span>
+      <button @click="nextPage">Suivant</button>
+    </div>
+
     <div v-else>
       <p>Aucun produit trouvé.</p>
     </div>
@@ -41,10 +55,11 @@ import { ref, onMounted } from 'vue';
 
 const products = ref([]);
 const notification = ref({ message: '', type: '' });
+const currentPage = ref(1);
 
 const loadProducts = async () => {
   try {
-    const response = await fetch('http://localhost:3100/sneakers?page=1');
+    const response = await fetch(`http://localhost:3100/sneakers?page=${currentPage.value}`);
     if (!response.ok) {
       throw new Error('Erreur lors de la récupération des produits.');
     }
@@ -52,6 +67,18 @@ const loadProducts = async () => {
     products.value = data.items;
   } catch (err) {
     notification.value = { message: err.message, type: 'error' };
+  }
+};
+
+const nextPage = () => {
+  currentPage.value++;
+  loadProducts();
+};
+
+const previousPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+    loadProducts();
   }
 };
 
@@ -113,6 +140,14 @@ onMounted(loadProducts);
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+/* Styles généraux */
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Notification styles */
 .notification {
   padding: 10px;
   margin-bottom: 20px;
@@ -130,10 +165,11 @@ onMounted(loadProducts);
   color: #721c24;
 }
 
+/* Grid styles */
 .sneaker-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 30px;
   justify-content: center;
 }
 
@@ -142,11 +178,12 @@ onMounted(loadProducts);
   border-radius: 15px;
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
   width: 280px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .sneaker-card:hover {
@@ -154,15 +191,16 @@ onMounted(loadProducts);
   box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2);
 }
 
-.sneaker-card img {
+.product-image img {
   width: 100%;
   height: auto;
-  border-bottom: 1px solid #eaeaea;
+  display: block;
 }
 
 .sneaker-info {
   padding: 15px;
   text-align: left;
+  flex-grow: 1;
 }
 
 .sneaker-info h2 {
@@ -178,60 +216,73 @@ onMounted(loadProducts);
   margin-bottom: 5px;
 }
 
-/* Conteneur des actions */
 .actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px;
-  background-color: #f9f9f9;
-  border-top: 1px solid #eaeaea;
-  position: absolute;
-  bottom: 0;
-  width: 100%;
 }
 
-/* Bouton wishlist (carré) */
 .wishlist-button {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 50%;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  transition: transform 0.3s ease;
+}
+
+.wishlist-button img {
+  width: 30px;
+  height: 30px;
 }
 
 .wishlist-button:hover {
-  background-color: #f5f5f5;
   transform: scale(1.1);
 }
 
-.wishlist-icon {
-  width: 24px;
-  height: 24px;
-}
-
-/* Bouton collection (large, avec texte) */
 .collection-button {
   background-color: #007bff;
-  color: #ffffff;
+  color: white;
   border: none;
-  padding: 10px 15px;
+  padding: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
-  flex-grow: 1;
-  text-align: center;
 }
 
 .collection-button:hover {
   background-color: #0056b3;
   transform: scale(1.02);
+}
+
+/* Pagination styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.pagination button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 </style>

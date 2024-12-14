@@ -43,6 +43,17 @@
         </div>
         <button type="submit" class="login-button">Login</button>
       </form>
+      <form @submit.prevent="register" class="register-form">
+        <div class="form-group">
+          <label for="register-username">Username</label>
+          <input type="text" id="register-username" v-model="registerUsername" required />
+        </div>
+        <div class="form-group">
+          <label for="register-password">Password</label>
+          <input type="password" id="register-password" v-model="registerPassword" required />
+        </div>
+        <button type="submit" class="register-button">Register</button>
+      </form>
     </div>
 
     <!-- Email Modal -->
@@ -75,6 +86,8 @@ const profileImage = ref(profilePlaceholder); // Default image
 const collection = ref([]); // Collection of products
 const showModal = ref(false);
 const email = ref('');
+const registerUsername = ref('');
+const registerPassword = ref('');
 
 const login = async () => {
   const response = await fetch('http://localhost:3100/login', {
@@ -90,6 +103,21 @@ const login = async () => {
     isLoggedIn.value = true;
     loadProfileImage(data.userId);
     loadCollection();
+  } else {
+    alert('Login failed. Please check your credentials.');
+  }
+};
+
+const register = async () => {
+  const response = await fetch('http://localhost:3100/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: registerUsername.value, password: registerPassword.value }),
+  });
+  if (response.ok) {
+    alert('Registration successful. Please log in.');
+  } else {
+    alert('Registration failed. Please try again.');
   }
 };
 
@@ -187,7 +215,7 @@ const closeEmailModal = () => {
 
 const sendEmail = async () => {
   try {
-    const response = await fetch('http://localhost:3100/send-email', {
+    const response = await fetch('http://localhost:3100/send-collection', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.value, collection: collection.value })
@@ -205,7 +233,6 @@ const sendEmail = async () => {
   }
 };
 
-// Check token and load user data on mount
 const checkToken = () => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -218,7 +245,6 @@ const checkToken = () => {
   }
 };
 
-// Call checkToken on component mount
 onMounted(checkToken);
 </script>
 
@@ -286,130 +312,140 @@ onMounted(checkToken);
   display: flex;
   align-items: center;
   margin-bottom: 15px;
-  border: 1px solid #ddd;
   padding: 10px;
+  border: 1px solid #ccc;
   border-radius: 5px;
+  background-color: white;
 }
 
 .product-image {
   width: 100px;
   height: 100px;
-  border-radius: 5px;
   object-fit: cover;
   margin-right: 15px;
 }
 
-.product-info {
-  flex-grow: 1;
+.product-info h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
 }
 
-.remove-button,
-.clear-button,
-.share-button {
-  margin-top: 10px;
-  background-color: #007bff;
-  color: #fff;
+.product-info p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+button {
+  padding: 10px 20px;
   border: none;
-  padding: 8px 16px;
   border-radius: 5px;
+  background-color: #007bff;
+  color: white;
   cursor: pointer;
+  margin-top: 10px;
 }
 
-.remove-button:hover,
-.clear-button:hover,
-.share-button:hover {
+button:hover {
   background-color: #0056b3;
 }
 
+.logout-button {
+  background-color: #dc3545;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
+}
+
+.clear-button {
+  background-color: #ffc107;
+}
+
+.clear-button:hover {
+  background-color: #e0a800;
+}
+
+.share-button {
+  background-color: #28a745;
+}
+
+.share-button:hover {
+  background-color: #218838;
+}
+
+.login-form, .register-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.login-button, .register-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+.login-button:hover, .register-button:hover {
+  background-color: #0056b3;
+}
+
+/* Modal styles */
 .modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
-  width: 300px;
-  background: #fff;
+  background-color: #fff;
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.modal-content h2 {
-  margin-top: 0;
-  font-size: 18px;
-  color: #333;
+  width: 400px;
+  position: relative;
 }
 
 .close {
   position: absolute;
   top: 10px;
   right: 10px;
+  font-size: 24px;
   cursor: pointer;
-  font-size: 20px;
 }
 
 .send-button {
-  margin-top: 10px;
-  background-color: #28a745;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 5px;
-  cursor: pointer;
+  background-color: #007bff;
 }
 
 .send-button:hover {
-  background-color: #218838;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 5px;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.login-form .form-group {
-  width: 100%;
-  margin-bottom: 15px;
-}
-
-.login-form button {
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.login-form button:hover {
   background-color: #0056b3;
 }
 </style>

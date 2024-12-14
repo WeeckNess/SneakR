@@ -142,12 +142,14 @@ app.post('/register', (req, res) => {
 
   connection.query(sql, [username, password], (err, result) => {
     if (err) {
+      console.error('Erreur lors de l\'inscription:', err.message);
       return res.status(500).json({ error: 'Erreur lors de l\'inscription.' });
     }
 
     res.status(201).json({ userId: result.insertId, username });
   });
 });
+
 
 // Route to get all sneakers with pagination
 app.get('/sneakers', (req, res) => {

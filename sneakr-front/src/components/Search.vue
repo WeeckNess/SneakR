@@ -1,11 +1,11 @@
 <template>
   <div class="search-bar">
     <div class="select-wrapper">
-      <label for="brand">Brand</label>
+      <label for="brand">Marque</label>
       <select v-model="brand" id="brand">
         <option value="">All Brands</option>
         <option value="ASICS">Asics</option>
-        <option value="Alexander Nc Queen">Alexander Mc Queen</option>
+        <option value="Alexander Mc Queen">Alexander Mc Queen</option>
         <option value="Bape">Bape</option>
         <option value="Balanciaga">Balanciaga</option>
         <option value="Common Projects">Common Projects</option>
@@ -27,15 +27,15 @@
         <option value="Puma">Puma</option>
         <option value="Reebok">Reebok</option>
         <option value="Salomon">Salomon</option>
-        <option value="Saucong">Saucong</option>
-        <option value="Under Armor">Under Armor</option>
+        <option value="Saucony">Saucony</option>
+        <option value="Under Armour">Under Armour</option>
         <option value="Vans">Vans</option>
         <option value="Versace">Versace</option>
       </select>
     </div>
 
     <div class="select-wrapper">
-      <label for="gender">Gender</label>
+      <label for="gender">Genre</label>
       <select v-model="gender" id="gender">
         <option value="">Tous les genres</option>
         <option value="men">Homme</option>
@@ -44,30 +44,55 @@
       </select>
     </div>
 
-    <button @click="search">Search</button>
+    <div class="select-wrapper">
+      <label for="character">Nom contient</label>
+      <input type="text" id="character" v-model="character" placeholder="Rechercher par caractère..." />
+    </div>
+
+    <div class="select-wrapper">
+      <label for="price-range">Prix</label>
+      <div class="price-range">
+        <input type="number" v-model="minMarketValue" placeholder="Min" />
+        <input type="number" v-model="maxMarketValue" placeholder="Max" />
+      </div>
+    </div>
+
+    <button @click="search">Rechercher</button>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, defineEmits } from 'vue';
+
+const emit = defineEmits(['search-results']);
 
 const brand = ref('');
 const gender = ref('');
+const character = ref('');
+const minMarketValue = ref('');
+const maxMarketValue = ref('');
 
 const search = async () => {
   const params = new URLSearchParams();
   if (brand.value) params.append('brand', brand.value);
   if (gender.value) params.append('gender', gender.value);
+  if (character.value) params.append('character', character.value);
+  if (minMarketValue.value) params.append('minMarketValue', minMarketValue.value);
+  if (maxMarketValue.value) params.append('maxMarketValue', maxMarketValue.value);
 
-  const response = await fetch(`http://localhost:3100/search?${params.toString()}`);
-  if (response.ok) {
-    const results = await response.json();
-    emit('search-results', results);
-  } else {
-    console.error('Erreur lors de la recherche des produits.');
+  try {
+    const response = await fetch(`http://localhost:3100/search?${params.toString()}`);
+    if (response.ok) {
+      const results = await response.json();
+      emit('search-results', results); // Émet les résultats pour être utilisés ailleurs
+    } else {
+      console.error('Erreur lors de la recherche des produits.');
+    }
+  } catch (error) {
+    console.error('Erreur réseau :', error.message);
   }
 };
-</script> 
+</script>
 
 <style scoped>
 .search-bar {
@@ -83,29 +108,21 @@ const search = async () => {
   gap: 5px;
 }
 
-label {
-  font-weight: bold;
-  font-size: 14px;
+.price-range {
+  display: flex;
+  gap: 10px;
 }
 
-select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.search-bar button {
+button {
   padding: 10px 20px;
   border: none;
   border-radius: 5px;
   background-color: #007bff;
   color: white;
   cursor: pointer;
-  margin-top: 10px;
-  transition: background-color 0.2s;
 }
 
-.search-bar button:hover {
+button:hover {
   background-color: #0056b3;
 }
 </style>

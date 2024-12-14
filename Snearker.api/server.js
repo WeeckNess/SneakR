@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const app = express();
+const nodemailer = require('nodemailer');
 
 // Configuration CORS
 app.use(cors({
@@ -87,6 +88,48 @@ app.post('/login', (req, res) => {
   });
 });
 
+app.post('/send-email', (req, res) => {
+  const { email, collection } = req.body;
+
+  if (!email || !collection) {
+    return res.status(400).json({ error: 'Email et collection requis.' });
+  }
+
+  // Créer un transporteur Nodemailer
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    }
+  });
+
+  // Générer le contenu HTML pour l'e-mail
+  const htmlContent = `
+    <h1>Votre collection de sneakers</h1>
+    <ul>
+      ${collection.map(item => `<li>${item.name} - ${item.marketValue}€</li>`).join('')}
+    </ul>
+  `;
+
+  // Configuration de l'e-mail
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Votre collection de sneakers',
+    html: htmlContent,
+  };
+
+  // Envoi de l'e-mail
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email.' });
+    }
+    res.status(200).json({ message: 'Email envoyé avec succès.' });
+  });
+});
+
+
 // Register route
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
@@ -135,6 +178,44 @@ app.get('/sneakers', (req, res) => {
   });
 });
 
+
+app.get('/collection', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  const sql=`
+    SELECT c.id, p.name, p.marketValue, p.imageOriginale, c.created_at
+    FROM collection c
+    JOIN All_SneakR p ON c.product_id = p.id
+    WHERE c.user_id = ?
+  `;
+  connection.query(sql, [userId], (err, results) => {
+    if  (err) {
+      console.error('Erreur lors de la récupération de la collection :', err.message);
+      return res.status(500).json({ error: 'Erreur lors de la récupération de la collection.' });
+    }
+    res.json(results);
+  });
+});
+
+app.post('/collection', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const {productId} = req.body;
+
+  if (!productId) {
+    return res.status(400).json({ error: 'Product ID is required.' });
+  }
+
+  const sql = `INSERT INTO collection (user_id, product_id) VALUES (?, ?)`;
+
+  connection.query(sql, [userId, productId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors de l\'ajout du produit à la collection.' });
+    }
+
+    res.status(201).json({ message: 'Produit ajouté à la collection avec succès.' });
+  });
+});
+
 // Route to get wishlist for the authenticated user
 app.get('/wishlist', authenticateToken, (req, res) => {
   const userId = req.user.id;
@@ -173,6 +254,38 @@ app.post('/wishlist', authenticateToken, (req, res) => {
     }
 
     res.status(201).json({ message: 'Produit ajouté à la wishlist avec succès.' });
+  });
+});
+
+app.delete('/collection/:collectionId', authenticateToken, (req, res) => {
+  const collectionId = req.params.collectionId;
+
+  const sql = `DELETE FROM collection WHERE id = ?`;
+
+  connection.query(sql, [collectionId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors du retrait du produit de la collection.' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Produit non trouvé dans la collection.' });
+    }
+
+    res.status(200).json({ message: 'Produit retiré de la collection avec succès.' });
+  });
+});
+
+app.delete('/collection', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+
+  const sql = `DELETE FROM collection WHERE user_id = ?`;
+
+  connection.query(sql, [userId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors du vidage de la collection.' });
+    }
+
+    res.status(200).json({ message: 'Collection vidée avec succès.' });
   });
 });
 
@@ -247,8 +360,9 @@ app.get('/profile-image/:userId', (req, res) => {
 });
 
 // Route to search sneakers with filters
+// Route to search sneakers with filters
 app.get('/search', (req, res) => {
-  const { brand, minMarketValue, maxMarketValue, gender } = req.query;
+  const { brand, minMarketValue, maxMarketValue, gender, character } = req.query;
 
   let sql = `SELECT * FROM All_SneakR WHERE 1=1`;
   const params = [];
@@ -273,8 +387,14 @@ app.get('/search', (req, res) => {
     params.push(gender);
   }
 
+  if (character) {
+    sql += ` AND name LIKE ?`;
+    params.push(`%${character}%`);
+  }
+
   connection.query(sql, params, (err, results) => {
     if (err) {
+      console.error('Erreur lors de la recherche des produits :', err.message);
       return res.status(500).json({ error: 'Erreur lors de la recherche des produits.' });
     }
 

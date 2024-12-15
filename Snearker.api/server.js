@@ -88,6 +88,55 @@ app.post('/login', (req, res) => {
   });
 });
 
+// Admin routes
+app.get('/admin/users', checkAdmin, (req, res) => {
+  const sql = `SELECT id, username, role FROM User`;
+
+  connection.query(sql, (err, results) => {
+    if (err) {
+      console.error('Erreur lors de la récupération des utilisateurs :', err.message);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs.' });
+    }
+
+    res.json(results);
+  });
+});
+
+app.put('/admin/users/:id', checkAdmin, (req, res) => {
+  const { role } = req.body;
+  const { id } = req.params;
+
+  if (!role) {
+    return res.status(400).json({ error: 'Role requis.' });
+  }
+
+  const sql = `UPDATE User SET role = ? WHERE id = ?`;
+
+  connection.query(sql, [role, id], (err, result) => {
+    if (err) {
+      console.error('Erreur lors de la mise à jour du rôle :', err.message);
+      return res.status(500).json({ error: 'Erreur lors de la mise à jour du rôle.' });
+    }
+
+    res.status(200).json({ message: 'Rôle mis à jour avec succès.' });
+  });
+});
+
+app.delete('/admin/users/:id', checkAdmin, (req, res) => {
+  const { id } = req.params;
+
+  const sql = `DELETE FROM User WHERE id = ?`;
+
+  connection.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error('Erreur lors de la suppression de l\'utilisateur :', err.message);
+      return res.status(500).json({ error: 'Erreur lors de la suppression de l\'utilisateur.' });
+    }
+
+    res.status(200).json({ message: 'Utilisateur supprimé avec succès.' });
+  });
+});
+
 app.post('/send-email', (req, res) => {
   const { email, collection } = req.body;
 

@@ -249,26 +249,64 @@ onMounted(checkToken);
 </script>
 
 <style scoped>
+/* Polices globales */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Container principal */
 .profile-container {
-  width: 80%;
+  width: 90%;
+  max-width: 900px;
   margin: 0 auto;
   padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
-  background-color: #f9f9f9;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background: linear-gradient(to bottom right, #fefefe, #f9f9f9);
+  animation: fadeIn 0.5s ease-in-out;
 }
 
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Titre principal */
 .title {
   text-align: center;
-  margin-bottom: 20px;
-  font-size: 24px;
-  color: #333;
+  margin-bottom: 30px;
+  font-size: 32px;
+  font-weight: 600;
+  color: #222;
+  letter-spacing: 1px;
+  position: relative;
 }
 
+/* Ligne décorative */
+.title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: #007bff;
+  margin: 10px auto;
+  border-radius: 3px;
+}
+
+/* Section Profil */
 .profile-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
 .profile-image {
@@ -276,53 +314,63 @@ onMounted(checkToken);
   height: 150px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+.profile-image:hover {
+  transform: scale(1.05);
 }
 
 .profile-info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex: 1;
 }
 
 .profile-info h2 {
   margin: 0;
   font-size: 24px;
-  color: #333;
+  font-weight: 600;
+  color: #444;
 }
 
-.profile-image-upload {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
+.logout-button {
+  margin-top: 10px;
+  background-color: #ff4d4d;
+  color: white;
+  transition: background-color 0.3s;
 }
 
-.collection {
-  margin-top: 20px;
+.logout-button:hover {
+  background-color: #e63939;
 }
 
+/* Collection */
 .collection h2 {
-  font-size: 20px;
-  margin-bottom: 10px;
-  color: #333;
+  font-size: 24px;
+  color: #222;
+  margin-bottom: 15px;
 }
 
 .collection-item {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: white;
+  gap: 15px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  transition: box-shadow 0.3s;
+}
+
+.collection-item:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .product-image {
   width: 100px;
   height: 100px;
+  border-radius: 8px;
   object-fit: cover;
-  margin-right: 15px;
 }
 
 .product-info h3 {
@@ -337,26 +385,19 @@ onMounted(checkToken);
   color: #555;
 }
 
+/* Boutons */
 button {
-  padding: 10px 20px;
+  padding: 10px 15px;
   border: none;
   border-radius: 5px;
-  background-color: #007bff;
-  color: white;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
+  transition: transform 0.2s, background-color 0.3s;
 }
 
 button:hover {
-  background-color: #0056b3;
-}
-
-.logout-button {
-  background-color: #dc3545;
-}
-
-.logout-button:hover {
-  background-color: #c82333;
+  transform: scale(1.05);
 }
 
 .clear-button {
@@ -375,44 +416,45 @@ button:hover {
   background-color: #218838;
 }
 
-.login-form, .register-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.form-group {
-  margin-bottom: 15px;
-  width: 100%;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
 .login-button, .register-button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
   background-color: #007bff;
   color: white;
-  cursor: pointer;
 }
 
 .login-button:hover, .register-button:hover {
   background-color: #0056b3;
 }
 
-/* Modal styles */
+/* Formulaires */
+.login-form, .register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin: 30px 0;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: #fefefe;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+/* Modal */
 .modal {
   display: flex;
   justify-content: center;
@@ -426,18 +468,19 @@ button:hover {
 }
 
 .modal-content {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 5px;
   width: 400px;
-  position: relative;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 .close {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 24px;
+  top: 15px;
+  right: 15px;
+  font-size: 20px;
   cursor: pointer;
 }
 

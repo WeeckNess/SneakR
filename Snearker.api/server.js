@@ -446,8 +446,9 @@ app.get('/profile-image/:userId', (req, res) => {
 
 // Route to search sneakers with filters
 // Route to search sneakers with filters
-app.get('/search', (req, res) => {
-  const { brand, minMarketValue, maxMarketValue, gender, character } = req.query;
+app.get('/sneakers', (req, res) => {
+  const { page = 1, limit = 10, brand, minMarketValue, maxMarketValue, gender, character } = req.query;
+  const offset = (page - 1) * limit;
 
   let sql = `SELECT * FROM All_SneakR WHERE 1=1`;
   const params = [];
@@ -472,10 +473,13 @@ app.get('/search', (req, res) => {
     params.push(gender);
   }
 
-  if (character) {
+  if (character && character.trim() !== '') {
     sql += ` AND name LIKE ?`;
     params.push(`%${character}%`);
   }
+
+  sql += ` LIMIT ? OFFSET ?`;
+  params.push(parseInt(limit), parseInt(offset));
 
   connection.query(sql, params, (err, results) => {
     if (err) {
@@ -483,7 +487,20 @@ app.get('/search', (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la recherche des produits.' });
     }
 
-    res.json(results);
+    const countSql = `SELECT COUNT(*) AS total FROM All_SneakR WHERE 1=1`;
+    const countParams = [...params.slice(0, -2)]; // Exclude limit and offset for count query
+
+    connection.query(countSql, countParams, (countErr, countResults) => {
+      if (countErr) {
+        console.error('Erreur lors du comptage des produits :', countErr.message);
+        return res.status(500).json({ error: 'Erreur lors du comptage des produits.' });
+      }
+
+      const totalItems = countResults[0].total;
+      const totalPages = Math.ceil(totalItems / limit);
+
+      res.json({ items: results, totalPages, totalItems, currentPage: parseInt(page) });
+    });
   });
 });
 

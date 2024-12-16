@@ -38,7 +38,7 @@ onMounted(() => {
           <img src="../src/assets/Wishlist.png" alt="Wishlist" class="wishlist-icon" />
         </RouterLink>
         <RouterLink v-if= 'isAdmin' to="/dashboard" class="nav-link">
-          ADMIN PANNEL
+          Dashboard
         </RouterLink>
       </nav>
     </div>
@@ -48,7 +48,10 @@ onMounted(() => {
   </main>
 </template>
 
-<style scoped>
+<style>
+ body {
+  margin: 0;
+ }
 .header {
   width: 100%;
 }

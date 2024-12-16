@@ -75,7 +75,7 @@ app.post('/login', (req, res) => {
     }
 
     const user = results[0];
-    const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, username: user.username, role:user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, userId: user.id, username: user.username });
   });
 });
@@ -168,7 +168,7 @@ app.post('/send-email', (req, res) => {
       pass: process.env.EMAIL_PASSWORD
     }
   });
-
+//m
   // Générer le contenu HTML pour l'e-mail
   const htmlContent = `
     <h1>Votre collection de sneakers</h1>
@@ -194,7 +194,6 @@ app.post('/send-email', (req, res) => {
   });
 });
 
-
 // Register route
 app.post('/register', (req, res) => {
   const { username, password } = req.body;
@@ -216,31 +215,69 @@ app.post('/register', (req, res) => {
 });
 
 
-// Route to get all sneakers with pagination
 app.get('/sneakers', (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const offset = (page - 1) * limit;
+  const { page = 1, limit = 10, brand, minMarketValue, maxMarketValue, gender, character } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
 
-  const countSql = `SELECT COUNT(*) AS total FROM All_SneakR;`;
+  // Construire la requête de récupération avec filtres
+  let sql = `SELECT * FROM All_SneakR WHERE 1=1`;
+  const params = [];
 
-  connection.query(countSql, (countErr, countResults) => {
-    if (countErr) {
-      console.error('Erreur lors du comptage des produits :', countErr.message);
-      return res.status(500).json({ error: 'Erreur lors du comptage des produits.' });
+  if (brand) {
+    sql += ` AND brand = ?`;
+    params.push(brand);
+  }
+
+  if (minMarketValue) {
+    sql += ` AND marketValue >= ?`;
+    params.push(parseFloat(minMarketValue));
+  }
+
+  if (maxMarketValue) {
+    sql += ` AND marketValue <= ?`;
+    params.push(parseFloat(maxMarketValue));
+  }
+
+  if (gender) {
+    sql += ` AND gender = ?`;
+    params.push(gender);
+  }
+
+  if (character && character.trim() !== '') {
+    sql += ` AND name LIKE ?`;
+    params.push(`%${character}%`);
+  }
+
+  sql += ` LIMIT ? OFFSET ?`;
+  params.push(parseInt(limit), offset);
+
+  // Exécuter la requête principale
+  connection.query(sql, params, (err, results) => {
+    if (err) {
+      console.error('Erreur lors de la récupération des produits :', err.message);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
     }
 
-    const totalItems = countResults[0].total;
-    const totalPages = Math.ceil(totalItems / limit);
+    // Construire la requête de comptage total avec les mêmes filtres
+    let countSql = `SELECT COUNT(*) AS total FROM All_SneakR WHERE 1=1`;
+    const countParams = params.slice(0, -2); // Exclure LIMIT et OFFSET pour le comptage
 
-    const sql = `SELECT * FROM All_SneakR LIMIT ? OFFSET ?`;
-    connection.query(sql, [limit, offset], (err, results) => {
-      if (err) {
-        console.error('Erreur lors de la récupération des produits :', err.message);
-        return res.status(500).json({ error: 'Erreur lors de la récupération des produits.' });
+    connection.query(countSql, countParams, (countErr, countResults) => {
+      if (countErr) {
+        console.error('Erreur lors du comptage des produits :', countErr.message);
+        return res.status(500).json({ error: 'Erreur lors du comptage des produits.' });
       }
 
-      res.json({ items: results, totalPages, totalItems, currentPage: page });
+      const totalItems = countResults[0].total;
+      const totalPages = Math.ceil(totalItems / limit);
+
+      // Retourner les résultats avec les informations de pagination
+      res.json({
+        items: results,
+        totalPages,
+        totalItems,
+        currentPage: parseInt(page),
+      });
     });
   });
 });
@@ -441,66 +478,6 @@ app.get('/profile-image/:userId', (req, res) => {
     }
 
     res.json({ imageUrl: results[0].profile_image });
-  });
-});
-
-// Route to search sneakers with filters
-// Route to search sneakers with filters
-app.get('/sneakers', (req, res) => {
-  const { page = 1, limit = 10, brand, minMarketValue, maxMarketValue, gender, character } = req.query;
-  const offset = (page - 1) * limit;
-
-  let sql = `SELECT * FROM All_SneakR WHERE 1=1`;
-  const params = [];
-
-  if (brand) {
-    sql += ` AND brand = ?`;
-    params.push(brand);
-  }
-
-  if (minMarketValue) {
-    sql += ` AND marketValue >= ?`;
-    params.push(minMarketValue);
-  }
-
-  if (maxMarketValue) {
-    sql += ` AND marketValue <= ?`;
-    params.push(maxMarketValue);
-  }
-
-  if (gender) {
-    sql += ` AND gender = ?`;
-    params.push(gender);
-  }
-
-  if (character && character.trim() !== '') {
-    sql += ` AND name LIKE ?`;
-    params.push(`%${character}%`);
-  }
-
-  sql += ` LIMIT ? OFFSET ?`;
-  params.push(parseInt(limit), parseInt(offset));
-
-  connection.query(sql, params, (err, results) => {
-    if (err) {
-      console.error('Erreur lors de la recherche des produits :', err.message);
-      return res.status(500).json({ error: 'Erreur lors de la recherche des produits.' });
-    }
-
-    const countSql = `SELECT COUNT(*) AS total FROM All_SneakR WHERE 1=1`;
-    const countParams = [...params.slice(0, -2)]; // Exclude limit and offset for count query
-
-    connection.query(countSql, countParams, (countErr, countResults) => {
-      if (countErr) {
-        console.error('Erreur lors du comptage des produits :', countErr.message);
-        return res.status(500).json({ error: 'Erreur lors du comptage des produits.' });
-      }
-
-      const totalItems = countResults[0].total;
-      const totalPages = Math.ceil(totalItems / limit);
-
-      res.json({ items: results, totalPages, totalItems, currentPage: parseInt(page) });
-    });
   });
 });
 

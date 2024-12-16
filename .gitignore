@@ -1,3 +1,4 @@
 node_modules/
 .env
-toto
+sneaker.db/
+.DS_Store

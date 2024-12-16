@@ -1,5 +1,20 @@
 <script setup>
+import { ref, onMounted } from 'vue';
 import { RouterLink, RouterView } from 'vue-router';
+
+const isAdmin = ref(false);
+
+const checkAdminRole = () => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    isAdmin.value = payload.role === 'admin';
+  }
+};
+
+onMounted(() => {
+  checkAdminRole();
+});
 </script>
 
 <template>
@@ -21,6 +36,9 @@ import { RouterLink, RouterView } from 'vue-router';
         </RouterLink>
         <RouterLink to="/Wishlist" class="nav-link">
           <img src="../src/assets/Wishlist.png" alt="Wishlist" class="wishlist-icon" />
+        </RouterLink>
+        <RouterLink v-if= 'isAdmin' to="/dashboard" class="nav-link">
+          ADMIN PANNEL
         </RouterLink>
       </nav>
     </div>
@@ -80,8 +98,7 @@ import { RouterLink, RouterView } from 'vue-router';
   font-size: 18px;
   padding: 10px 20px;
   border-radius: 4px;
-  transition: all 0.3s ease;
-}
+  transition: all 0.3s ease,}
 
 .nav-link:hover {
   background-color: #353535;

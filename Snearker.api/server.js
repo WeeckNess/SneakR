@@ -1,12 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql');
-const dotenv = require('dotenv').config(); // Load environment variables
+const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
-const app = express();
 const nodemailer = require('nodemailer');
+const app = express();
 
 // Configuration CORS
 app.use(cors({
@@ -56,40 +56,56 @@ function authenticateToken(req, res, next) {
 
   if (token == null) return res.sendStatus(401);
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => { // Utilisation de la variable d'environnement pour la clé secrète JWT
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Jeton invalide ou expiré.' });
     req.user = user;
     next();
   });
 }
 
-// Login route
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
   const sql = `SELECT * FROM User WHERE username = ?`;
   connection.query(sql, [username], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la connexion.' });
-    }
+    if (err) return res.status(500).json({ error: 'Erreur lors de la connexion.' });
 
-    if (results.length === 0) {
-      return res.status(401).json({ error: 'Utilisateur non trouvé.' });
+    if (results.length === 0 || results[0].password !== password) {
+      return res.status(401).json({ error: 'Identifiants invalides.' });
     }
 
     const user = results[0];
-
-    if (user.password !== password) {
-      return res.status(401).json({ error: 'Mot de passe incorrect.' });
-    }
-
     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, userId: user.id, username: user.username });
   });
 });
 
-// Admin routes
-app.get('/admin/users', checkAdmin, (req, res) => {
+
+// Middleware pour vérifier si un utilisateur est administrateur
+function checkAdmin(req, res, next) {
+  const userId = req.user.id;
+
+  const sql = `SELECT role FROM User WHERE id = ?`;
+  connection.query(sql, [userId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors de la vérification des autorisations.' });
+    }
+
+    if (results.length === 0 || results[0].role !== 'admin') {
+      return res.status(403).json({ error: 'Accès refusé. Rôle admin requis.' });
+    }
+
+    next();
+  });
+}
+
+// Route pour accéder à la page admin si l'utilisateur a le rôle admin
+app.get('/admin', authenticateToken, checkAdmin, (req, res) => {
+  res.status(200).json({ message: 'Bienvenue sur la page admin.' });
+});
+
+// Routes d’administration pour gérer les utilisateurs
+app.get('/admin/users', authenticateToken, checkAdmin, (req, res) => {
   const sql = `SELECT id, username, role FROM User`;
 
   connection.query(sql, (err, results) => {
@@ -102,7 +118,7 @@ app.get('/admin/users', checkAdmin, (req, res) => {
   });
 });
 
-app.put('/admin/users/:id', checkAdmin, (req, res) => {
+app.put('/admin/users/:id', authenticateToken, checkAdmin, (req, res) => {
   const { role } = req.body;
   const { id } = req.params;
 
@@ -122,7 +138,7 @@ app.put('/admin/users/:id', checkAdmin, (req, res) => {
   });
 });
 
-app.delete('/admin/users/:id', checkAdmin, (req, res) => {
+app.delete('/admin/users/:id', authenticateToken, checkAdmin, (req, res) => {
   const { id } = req.params;
 
   const sql = `DELETE FROM User WHERE id = ?`;
@@ -266,6 +282,24 @@ app.post('/collection', authenticateToken, (req, res) => {
     res.status(201).json({ message: 'Produit ajouté à la collection avec succès.' });
   });
 });
+
+function checkAdmin(req, res, next) {
+  const userId = req.user.id;
+
+  const sql = `SELECT role FROM User WHERE id = ?`;
+  connection.query(sql, [userId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors de la vérification des autorisations.' });
+    }
+
+    if (results.length === 0 || results[0].role !== 'admin') {
+      return res.status(403).json({ error: 'Accès refusé. Rôle admin requis.' });
+    }
+
+    next();
+  });
+}
+
 
 // Route to get wishlist for the authenticated user
 app.get('/wishlist', authenticateToken, (req, res) => {

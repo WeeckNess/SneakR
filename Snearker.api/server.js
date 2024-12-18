@@ -75,11 +75,10 @@ app.post('/login', (req, res) => {
     }
 
     const user = results[0];
-    const token = jwt.sign({ id: user.id, username: user.username, role:user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, userId: user.id, username: user.username });
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token, userId: user.id, username: user.username, email: user.email });
   });
 });
-
 
 // Middleware pour vérifier si un utilisateur est administrateur
 function checkAdmin(req, res, next) {
@@ -153,44 +152,71 @@ app.delete('/admin/users/:id', authenticateToken, checkAdmin, (req, res) => {
   });
 });
 
-app.post('/send-email', (req, res) => {
-  const { email, collection } = req.body;
+// Route pour envoyer la collection par e-mail
+app.post('/send-collection-email', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const recipientEmail = req.body.recipientEmail;
 
-  if (!email || !collection) {
-    return res.status(400).json({ error: 'Email et collection requis.' });
+  if (!recipientEmail) {
+    return res.status(400).json({ error: "L'adresse e-mail du destinataire est requise." });
   }
 
-  // Créer un transporteur Nodemailer
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
-//m
-  // Générer le contenu HTML pour l'e-mail
-  const htmlContent = `
-    <h1>Votre collection de sneakers</h1>
-    <ul>
-      ${collection.map(item => `<li>${item.name} - ${item.marketValue}€</li>`).join('')}
-    </ul>
-  `;
+  const getUserEmailSql = `SELECT email FROM User WHERE id = ?`;
+  const getUserCollectionSql = `SELECT p.name, p.marketValue FROM Collection c JOIN All_SneakR p ON c.product_id = p.id WHERE c.user_id = ?`;
 
-  // Configuration de l'e-mail
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'Votre collection de sneakers',
-    html: htmlContent,
-  };
-
-  // Envoi de l'e-mail
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      return res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email.' });
+  connection.query(getUserEmailSql, [userId], (err, userResults) => {
+    if (err) {
+      console.error("Erreur lors de la récupération de l'e-mail de l'utilisateur :", err.message);
+      return res.status(500).json({ error: 'Erreur interne du serveur.' });
     }
-    res.status(200).json({ message: 'Email envoyé avec succès.' });
+
+    if (userResults.length === 0) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé.' });
+    }
+
+    const userEmail = userResults[0].email;
+
+    connection.query(getUserCollectionSql, [userId], (err, collectionResults) => {
+      if (err) {
+        console.error("Erreur lors de la récupération de la collection :", err.message);
+        return res.status(500).json({ error: 'Erreur interne du serveur.' });
+      }
+
+      if (collectionResults.length === 0) {
+        return res.status(404).json({ error: 'Aucun produit trouvé dans la collection de l\'utilisateur.' });
+      }
+
+      // Formater la collection pour l'inclure dans le texte de l'e-mail
+      const formattedCollection = collectionResults
+        .map((product) => `- ${product.name}: ${product.marketValue}€`)
+        .join('\n');
+
+      // Configuration de l'envoi d'e-mail
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER, // E-mail de l'application
+          pass: process.env.EMAIL_PASSWORD, // Mot de passe ou clé de l'application
+        },
+      });
+
+      const mailOptions = {
+        from: userEmail, // Utiliser l'e-mail de l'utilisateur comme expéditeur
+        to: recipientEmail, // Adresse e-mail saisie dans le frontend
+        subject: 'Votre Collection',
+        text: `Bonjour,\n\nVoici votre collection :\n\n${formattedCollection}\n\nCordialement,\nL'équipe SneakR.`,
+      };
+
+      // Envoi de l'e-mail
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("Erreur lors de l'envoi de l'e-mail :", error.message);
+          return res.status(500).json({ error: "Erreur lors de l'envoi de l'e-mail." });
+        }
+        console.log("E-mail envoyé avec succès :", info.response);
+        res.status(200).json({ message: "E-mail envoyé avec succès." });
+      });
+    });
   });
 });
 
@@ -213,7 +239,6 @@ app.post('/register', (req, res) => {
     res.status(201).json({ userId: result.insertId, username });
   });
 });
-
 
 app.get('/sneakers', (req, res) => {
   const { page = 1, limit = 10, brand, minMarketValue, maxMarketValue, gender, character } = req.query;
@@ -282,7 +307,6 @@ app.get('/sneakers', (req, res) => {
   });
 });
 
-
 app.get('/collection', authenticateToken, (req, res) => {
   const userId = req.user.id;
 
@@ -320,23 +344,37 @@ app.post('/collection', authenticateToken, (req, res) => {
   });
 });
 
-function checkAdmin(req, res, next) {
+app.delete('/collection/:collectionId', authenticateToken, (req, res) => {
+  const collectionId = req.params.collectionId;
+
+  const sql = `DELETE FROM collection WHERE id = ?`;
+
+  connection.query(sql, [collectionId], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Erreur lors du retrait du produit de la collection.' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Produit non trouvé dans la collection.' });
+    }
+
+    res.status(200).json({ message: 'Produit retiré de la collection avec succès.' });
+  });
+});
+
+app.delete('/collection', authenticateToken, (req, res) => {
   const userId = req.user.id;
 
-  const sql = `SELECT role FROM User WHERE id = ?`;
-  connection.query(sql, [userId], (err, results) => {
+  const sql = `DELETE FROM collection WHERE user_id = ?`;
+
+  connection.query(sql, [userId], (err, result) => {
     if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la vérification des autorisations.' });
+      return res.status(500).json({ error: 'Erreur lors du vidage de la collection.' });
     }
 
-    if (results.length === 0 || results[0].role !== 'admin') {
-      return res.status(403).json({ error: 'Accès refusé. Rôle admin requis.' });
-    }
-
-    next();
+    res.status(200).json({ message: 'Collection vidée avec succès.' });
   });
-}
-
+});
 
 // Route to get wishlist for the authenticated user
 app.get('/wishlist', authenticateToken, (req, res) => {
@@ -376,38 +414,6 @@ app.post('/wishlist', authenticateToken, (req, res) => {
     }
 
     res.status(201).json({ message: 'Produit ajouté à la wishlist avec succès.' });
-  });
-});
-
-app.delete('/collection/:collectionId', authenticateToken, (req, res) => {
-  const collectionId = req.params.collectionId;
-
-  const sql = `DELETE FROM collection WHERE id = ?`;
-
-  connection.query(sql, [collectionId], (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors du retrait du produit de la collection.' });
-    }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Produit non trouvé dans la collection.' });
-    }
-
-    res.status(200).json({ message: 'Produit retiré de la collection avec succès.' });
-  });
-});
-
-app.delete('/collection', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-
-  const sql = `DELETE FROM collection WHERE user_id = ?`;
-
-  connection.query(sql, [userId], (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors du vidage de la collection.' });
-    }
-
-    res.status(200).json({ message: 'Collection vidée avec succès.' });
   });
 });
 
@@ -482,6 +488,7 @@ app.get('/profile-image/:userId', (req, res) => {
 });
 
 // Start the server
-app.listen(3100, () => {
-  console.log('Serveur démarré sur le port 3100');
+const PORT = process.env.PORT || 3100;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });

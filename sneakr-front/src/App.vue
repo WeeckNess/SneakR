@@ -20,11 +20,6 @@ onMounted(() => {
 <template>
   <header>
     <div class="wrapper">
-      <nav class="gauche">
-        <RouterLink to="/search" class="nav-link">
-          <img src="../src/assets/Search logo.png" alt="Logo" class="search-logo" />
-        </RouterLink>
-      </nav>
       <nav class="logo">
         <RouterLink to="/">
           <img src="../src/assets/SNK Trade Logo.webp" alt="Logo" class="logo-img" />
@@ -63,31 +58,25 @@ onMounted(() => {
   display: flex;
   justify-content: space-between; 
   align-items: center;
-  /* width: 100%;  */
   padding-left: 1rem;
-}
-
-.gauche {
-  display: flex;
-  justify-content: flex-start;
 }
 
 .droite {
   display: flex;
   justify-content: space-between;
-  /* margin-right: 5%; */
-  /* padding-right: 5%; */
 }
 
 .logo {
   flex: 1;
-  text-align: center;
+  text-align: left;
 }
 
 .logo-img {
   max-height: 120px;
   object-fit: contain;  
   transition: transform 0.3s ease, filter 0.3s ease; 
+  justify-content: left;
+  /* background-color: rgb(255, 255, 255); */
 }
 
 .logo-img:hover {
@@ -101,7 +90,9 @@ onMounted(() => {
   font-size: 18px;
   padding: 10px 20px;
   border-radius: 4px;
-  transition: all 0.3s ease,}
+  transition: all 0.3s ease;
+}
+
 
 .nav-link:hover {
   background-color: #353535;
@@ -111,6 +102,11 @@ onMounted(() => {
 
 .nav-link:active {
   background-color: #ffffff;
+}
+
+.nav-logo {
+  display: flex;
+  justify-content: left;
 }
 
 .profile-icon,
@@ -128,19 +124,9 @@ onMounted(() => {
   filter: invert(1);
 }
 
-.search-icon:hover {
-  transform: scale(0.1);
-  filter: invert(1);
-}
+html {
+color: black} 
 
-.search-logo {
-  width: 75px;
-  height: 90px;
-  object-fit: cover;
-  border-radius: 0%;
-  transition: transform 0.3s ease, filter 0.3s ease;
-}
- 
 main {
   padding: 2rem;
   background-color: #f9f9f9;

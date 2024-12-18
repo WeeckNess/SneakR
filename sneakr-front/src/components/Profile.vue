@@ -1,76 +1,69 @@
 <template>
-  <div class="profile-container">
-    <h1 class="title">Profile</h1>
-    <div v-if="isLoggedIn">
-      <div class="profile-header">
-        <img :src="profileImage" alt="Profile Image" v-if="profileImage" class="profile-image" />
-        <div class="profile-info">
-          <h2>{{ username }}</h2>
-          <button @click="logout" class="logout-button">Disconnect</button>
-        </div>
-      </div>
-      <div class="profile-image-upload">
-        <input type="file" @change="uploadProfileImage" />
-      </div>
-      <div class="collection">
-        <h2>Your Collection</h2>
-        <div v-if="collection.length > 0">
-          <div v-for="(product, index) in collection" :key="index" class="collection-item">
-            <img :src="product.imageOriginale || 'placeholder.jpg'" alt="Sneaker" class="product-image" />
-            <div class="product-info">
-              <h3>{{ product.name || "Nom indisponible" }}</h3>
-              <p><strong>Prix : </strong>{{ product.marketValue || "N/A" }} €</p>
-            </div>
-            <button @click="removeFromCollection(product.id)" class="remove-button">Retirer</button>
+<div class="profile-container">
+  <h1 class="title">Connexion</h1>
+  <div v-if="isLoggedIn">
+    <div class="profile-info">
+      <h2>Bonjour {{ username }}</h2>
+    </div>
+    <div class="profile-header">
+      <img :src="profileImage" alt="Profile Image" v-if="profileImage" class="profile-image" />
+    </div>
+    <input type="file" @change="uploadProfileImage" />
+    <div class="collection">
+      <h2>Votre collection</h2>
+      <div v-if="collection.length > 0">
+        <div v-for="(product, index) in collection" :key="index" class="collection-item">
+          <img :src="product.imageOriginale || 'placeholder.jpg'" alt="Sneaker" class="product-image" />
+          <div class="product-info">
+            <h3>{{ product.name || "Nom indisponible" }}</h3>
+            <p><strong>Prix : </strong>{{ product.marketValue || "N/A" }} €</p>
           </div>
+          <button @click="removeFromCollection(product.id)" class="remove-button">Retirer</button>
+        </div>
+        <div class="button-action">
           <button @click="clearCollection" class="clear-button">Vider la collection</button>
-          <button @click="showEmailModal" class="share-button">Partager par Email</button>
+          <div class="email-container">
+          <label for="emailRecipient.value">Adresse e-mail du destinataire :</label>
+          <input type="email" id="emailRecipient.value" v-model="emailRecipient" placeholder="Entrez l'adresse e-mail du destinataire" required />
+          <button @click="sendCollectionByEmail" class="send-email-button">Envoyer par E-mail</button>        
         </div>
-        <div v-else>
-          <p>Votre collection est vide.</p>
+        <button @click="logout" class="logout-button" v-if="true">Déconnexion</button>
         </div>
       </div>
-    </div>
-    <div v-else>
-      <form @submit.prevent="login" class="login-form">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" v-model="username" required />
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" v-model="password" required />
-        </div>
-        <button type="submit" class="login-button">Login</button>
-      </form>
-      <form @submit.prevent="register" class="register-form">
-        <div class="form-group">
-          <label for="register-username">Username</label>
-          <input type="text" id="register-username" v-model="registerUsername" required />
-        </div>
-        <div class="form-group">
-          <label for="register-password">Password</label>
-          <input type="password" id="register-password" v-model="registerPassword" required />
-        </div>
-        <button type="submit" class="register-button">Register</button>
-      </form>
-    </div>
-
-    <!-- Email Modal -->
-    <div v-if="showModal" class="modal">
-      <div class="modal-content">
-        <span class="close" @click="closeEmailModal">&times;</span>
-        <h2>Partager votre collection par Email</h2>
-        <form @submit.prevent="sendEmail">
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" v-model="email" required />
-          </div>
-          <button type="submit" class="send-button">Envoyer</button>
-        </form>
+      <div v-else>
+        <p>Votre collection est vide.</p>
       </div>
     </div>
   </div>
+  
+  <div v-else>
+    <form @submit.prevent="login" class="login-form">
+      <div class="form-group">
+        <label for="username">Nom d'utilisateur</label>
+        <input type="text" id="username" v-model="username" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" v-model="password" required />
+      </div>
+      <button type="submit" class="login-button">Connexion</button>
+    </form>
+    <div v-if="showRegisterForm">
+      <form @submit.prevent="register" class="register-form">
+        <div class="form-group">
+          <label for="register-username">Nom d'utilisateur</label>
+          <input type="text" id="register-username" v-model="registerUsername" required />
+        </div>
+        <div class="form-group">
+          <label for="register-password">Mot de passe</label>
+          <input type="password" id="register-password" v-model="registerPassword" required />
+        </div>
+        <button type="submit" class="register-button">S'enregistrer</button>
+      </form>
+    </div>
+    <p v-if="!showRegisterForm" @click="toggleRegisterForm" class="toggle-register">Si vous n'avez pas de compte, créez-en un</p>
+  </div>
+</div>
 </template>
 
 <script setup>
@@ -78,6 +71,7 @@ import { ref, onMounted } from 'vue';
 import { jwtDecode } from 'jwt-decode';
 import profilePlaceholder from '@/assets/coco.jpeg'; // Image locale
 
+const emailRecipient = ref('');
 const isLoggedIn = ref(false);
 const userId = ref(null);
 const username = ref('');
@@ -88,6 +82,7 @@ const showModal = ref(false);
 const email = ref('');
 const registerUsername = ref('');
 const registerPassword = ref('');
+const showRegisterForm = ref(false);
 
 const login = async () => {
   const response = await fetch('http://localhost:3100/login', {
@@ -105,6 +100,62 @@ const login = async () => {
     loadCollection();
   } else {
     alert('Login failed. Please check your credentials.');
+  }
+};
+
+const fetchCollection = async () => {
+  try {
+    const response = await axios.get(`http://localhost:3100/collections/${userId.value}`);
+    collection.value = response.data;
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la collection :', error.message);
+    alert('Impossible de récupérer votre collection.');
+  }
+};
+
+const sendCollectionByEmail = async () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert("Vous devez être connecté pour envoyer votre collection par e-mail.");
+    return;
+  }
+
+  if (!emailRecipient.value) {
+    alert("L'adresse e-mail du destinataire est requise.");
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:3100/send-collection-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        recipientEmail: emailRecipient.value // Utilise l'adresse email saisie par l'utilisateur comme destinataire
+      }),
+    });
+
+    if (response.ok) {
+      alert('Votre collection a été envoyée par e-mail avec succès.');
+      closeEmailModal();
+    } else {
+      const errorData = await response.json();
+      console.error("Erreur lors de l'envoi de l'email :", errorData.message);
+      alert(errorData.message);
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de la collection par e-mail :", error.message);
+    alert("Impossible d'envoyer votre collection par e-mail.");
+  }
+};
+
+const toggleRegisterForm = () => {
+  showRegisterForm.value = !showRegisterForm.value;
+  const contextMenu = document.getElementById('contextMenu');
+  if (contextMenu) {
+    contextMenu.style.display = showRegisterForm.value ? 'block' : 'none';
   }
 };
 
@@ -162,8 +213,10 @@ const logout = () => {
   localStorage.removeItem('token');
   isLoggedIn.value = false;
   username.value = '';
+  userId.value = null;
   profileImage.value = profilePlaceholder;
   collection.value = [];
+  alert("Vous êtes déconnecté.");
 };
 
 const loadCollection = async () => {
@@ -211,26 +264,6 @@ const showEmailModal = () => {
 const closeEmailModal = () => {
   showModal.value = false;
   email.value = '';
-};
-
-const sendEmail = async () => {
-  try {
-    const response = await fetch('http://localhost:3100/send-collection', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, collection: collection.value })
-    });
-
-    if (!response.ok) {
-      throw new Error('Erreur lors de l\'envoi de l\'email.');
-    }
-
-    alert('Email envoyé avec succès.');
-    closeEmailModal();
-  } catch (err) {
-    console.error(err.message);
-    alert('Erreur lors de l\'envoi de l\'email.');
-  }
 };
 
 const checkToken = () => {
@@ -304,18 +337,20 @@ body {
 /* Section Profil */
 .profile-header {
   display: flex;
-  align-items: center;
   gap: 20px;
   margin-bottom: 30px;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-image {
-  width: 150px;
-  height: 150px;
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
   object-fit: cover;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease-in-out;
+  align-self: center;
 }
 
 .profile-image:hover {
@@ -327,10 +362,11 @@ body {
 }
 
 .profile-info h2 {
-  margin: 0;
-  font-size: 24px;
+  font-size: 34px;
   font-weight: 600;
   color: #444;
+  position: relative;
+  justify-self: center;
 }
 
 .logout-button {
@@ -339,16 +375,28 @@ body {
   color: white;
   transition: background-color 0.3s;
 }
+.remove-button {
+position: relative;
+align-self: left;
+}
 
 .logout-button:hover {
   background-color: #e63939;
 }
+
 
 /* Collection */
 .collection h2 {
   font-size: 24px;
   color: #222;
   margin-bottom: 15px;
+}
+.h3 {
+  font-size: 18px;
+  color: #222;
+  margin-bottom: 15px;
+  justify-content: right;
+  position: relative;
 }
 
 .collection-item {
@@ -360,6 +408,36 @@ body {
   border-radius: 10px;
   background: #fff;
   transition: box-shadow 0.3s;
+  justify-content: space-between;
+}
+
+.email-container {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 400px;
+}
+
+.email-container label {
+  font-weight: 500;
+  color: #333;
+}
+
+.email-container input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.send-email-button {
+  background-color: #007bff;
+  color: white;
+  font-size: 14px;
+}
+
+.send-email-button:hover {
+  background-color: #0056b3;
 }
 
 .collection-item:hover {
@@ -377,6 +455,7 @@ body {
   margin: 0;
   font-size: 18px;
   color: #333;
+  
 }
 
 .product-info p {
@@ -445,13 +524,21 @@ button:hover {
 .form-group label {
   margin-bottom: 5px;
   font-weight: 500;
-  color: #333;
+  color: #000000;
+}
+
+h2 {
+  font-size: 24px;
+  color: #222;
+  margin-bottom: 15px;
 }
 
 .form-group input {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
+  background-color: #eeeeee;
+  color: #000000;
 }
 
 /* Modal */
@@ -491,4 +578,12 @@ button:hover {
 .send-button:hover {
   background-color: #0056b3;
 }
+
+.button-action{
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+
+}
+
 </style>

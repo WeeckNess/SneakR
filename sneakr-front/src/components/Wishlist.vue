@@ -3,8 +3,8 @@
     <h1>Votre Wishlist</h1>
     <div v-if="wishlist.length > 0">
       <div v-for="(product, index) in wishlist" :key="index" class="wishlist-item">
-        <h3>{{ product.name || "Nom indisponible" }}</h3>
         <img :src="product.imageOriginale || 'placeholder.jpg'" alt="Sneaker" class="product-image" />
+        <h3>{{ product.name || "Nom indisponible" }}</h3>
         <p><strong>Prix : </strong>{{ product.marketValue || "N/A" }} €</p>
         <button @click="removeFromWishlist(product.id)">Retirer</button>
       </div>
@@ -126,16 +126,18 @@ onMounted(loadWishlist);
 }
 
 button {
-  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 15px;
   border: none;
   border-radius: 5px;
-  background-color: #007bff;
-  color: white;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
+  transition: transform 0.2s, background-color 0.3s;
 }
 
 button:hover {
-  background-color: #0056b3;
+  transform: scale(1.05);
 }
 </style>

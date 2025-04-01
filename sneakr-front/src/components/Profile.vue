@@ -82,6 +82,7 @@ const isLoggedIn = ref(false);
 const userId = ref(null);
 const username = ref('');
 const password = ref('');
+const profileImage = ref(profilePlaceholder);
 const collection = ref([]); // Collection of products
 const showModal = ref(false);
 const email = ref('');

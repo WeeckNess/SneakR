@@ -5,12 +5,16 @@
     <div class="profile-info">
       <h2>Bonjour {{ username }}</h2>
     </div>
+
     <div class="profile-header">
       <img :src="profileImage" alt="Profile Image" v-if="profileImage" class="profile-image" />
     </div>
+
     <input type="file" @change="uploadProfileImage" />
     <div class="collection">
       <h2>Votre collection</h2>
+    <button @click="logout" class="logout-button" v-if="true">Déconnexion</button>
+
       <div v-if="collection.length > 0">
         <div v-for="(product, index) in collection" :key="index" class="collection-item">
           <img :src="product.imageOriginale || 'placeholder.jpg'" alt="Sneaker" class="product-image" />
@@ -18,6 +22,7 @@
             <h3>{{ product.name || "Nom indisponible" }}</h3>
             <p><strong>Prix : </strong>{{ product.marketValue || "N/A" }} €</p>
           </div>
+
           <button @click="removeFromCollection(product.id)" class="remove-button">Retirer</button>
         </div>
         <div class="button-action">
@@ -25,9 +30,10 @@
           <div class="email-container">
           <label for="emailRecipient.value">Adresse e-mail du destinataire :</label>
           <input type="email" id="emailRecipient.value" v-model="emailRecipient" placeholder="Entrez l'adresse e-mail du destinataire" required />
-          <button @click="sendCollectionByEmail" class="send-email-button">Envoyer par E-mail</button>        
+          <button @click="sendCollectionByEmail" class="send-email-button">Envoyer par E-mail</button>   
+
         </div>
-        <button @click="logout" class="logout-button" v-if="true">Déconnexion</button>
+        
         </div>
       </div>
       <div v-else>
@@ -76,7 +82,6 @@ const isLoggedIn = ref(false);
 const userId = ref(null);
 const username = ref('');
 const password = ref('');
-const profileImage = ref(profilePlaceholder); // Default image
 const collection = ref([]); // Collection of products
 const showModal = ref(false);
 const email = ref('');

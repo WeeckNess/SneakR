@@ -1,57 +1,63 @@
-How to Launch the Project
-Prerequisites
-Ensure you have the following installed:
-Node.js (for Vue.js development)
-Docker & Docker Compose
-Git
+SneakR - Epitech Digital School Project
 
----
+SneakR est une application web développée dans le cadre d'un projet académique visant à apprendre la gestion d'une grosse base de données et son intégration avec un site web moderne. Ce projet met en œuvre un frontend en Vue.js et un backend avec une base de données gérée via Docker.
 
-Steps to Launch
-#### 1. Clone the Repository
+🚀 Lancer le projet
+
+📌 Prérequis
+
+Assurez-vous d'avoir les éléments suivants installés sur votre machine :
+
+Node.js (pour le développement en Vue.js) → Télécharger Node.js
+
+Docker & Docker Compose → Installer Docker
+
+Git → Télécharger Git
+
+⚙️ Étapes d'installation et de lancement
+
+1️⃣ Cloner le dépôt
 
 git clone git@github.com:weeckness/SneakR.git SneakR
-
-
 cd SneakR
 
+2️⃣ Configuration du Frontend (Vue.js)
 
-#### 2. Setup the Frontend (Vue.js)
-
-Navigate to the frontend directory:
+# Se déplacer dans le dossier du frontend
 cd sneqkr-front
-Install dependencies:
+
+# Installer les dépendances
 npm install
-Run the development server:
+
+# Lancer le serveur de développement
 npm run dev
 
-The frontend will be accessible at http://localhost:5173.
+📍 Le frontend sera accessible à http://localhost:5173.
 
----
+3️⃣ Configuration du Backend et de la Base de Données
 
-#### 3. Setup the Backend
-
-Navigate to the backend (SneakR_DB) directory:
+# Se déplacer dans le dossier du backend
 cd ../Snearker.api
-Use Docker to set up the backend and database:
+
+# Lancer le backend et la base de données avec Docker
 docker-compose up -d
 
----
+4️⃣ Accès à phpMyAdmin
 
-#### 4. Access phpMyAdmin
+📍 L'interface phpMyAdmin sera accessible à http://localhost:8080.
 
-phpMyAdmin will be accessible at:
-http://localhost:8080
-Use the following default credentials to log in:
-Username: root
-Password: thom
+Identifiants par défaut :
 
----
+Utilisateur: root
 
-Notes:
-Make sure to configure the .env files in frontend (vue-SneakR) directory with appropriate settings before starting.
-The database schema will be automatically initialized via the docker-compose setup.
+Mot de passe: thom
 
----
+📝 Notes Importantes
 
-EPITECH Digital School Project
+✅ Avant de démarrer l'application, assurez-vous de configurer les fichiers .env dans le dossier frontend (vue-SneakR) avec les paramètres appropriés.✅ Le schéma de la base de données est automatiquement initialisé grâce à la configuration docker-compose.
+
+🏫 Projet réalisé dans le cadre d'EPITECH Digital School
+
+Ce projet est une démonstration de nos compétences en développement full-stack et en gestion de base de données dans un environnement cloud & conteneurisé.
+
+🚀 Bon développement et n'hésitez pas à contribuer !

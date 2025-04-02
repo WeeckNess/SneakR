@@ -211,10 +211,6 @@ onMounted(loadProducts);
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-/* Styles généraux */
-body {
-  font-family: 'Poppins', sans-serif;
-}
 
 /* Notification styles */
 .notification {
@@ -226,12 +222,12 @@ body {
 
 .notification.success {
   background-color: #d4edda;
-  color: #155724;
+  color: #ffffff;
 }
 
 .notification.error {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: #ffffff;
+  color: #000000;
 }
 
 /* Barre de recherche */
@@ -387,6 +383,7 @@ button:disabled {
   justify-content: space-between;
   position: relative;
   transition: transform 0.3s ease;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .sneaker-card:hover {
@@ -440,23 +437,25 @@ button:disabled {
 
 .wishlist-button:hover {
   transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #f0f0f0;
 }
 
 .collection-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
+  background-color: transparent;
+  color: rgb(0, 0, 0);
   padding: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.3s ease;
+  border: 1px solid transparent;
 }
 
 .collection-button:hover {
-  background-color: #0056b3;
   transform: scale(1.02);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #f0f0f0;
 }
 
 /* Pagination styles */
